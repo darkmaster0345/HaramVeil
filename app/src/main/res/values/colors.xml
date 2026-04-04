@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App icon background color (dark teal to match the app theme) -->
+    <color name="ic_launcher_background">#1A2B2B</color>
+    
+    <!-- Primary colors -->
+    <color name="primary">#00BFA5</color>
+    <color name="primary_dark">#00897B</color>
+    <color name="primary_light">#4DB6AC</color>
+    
+    <!-- Splash screen colors -->
+    <color name="splash_background">#121212</color>
+    <color name="splash_icon_background">#1A2B2B</color>
+</resources>

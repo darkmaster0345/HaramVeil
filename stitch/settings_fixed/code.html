@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HaramVeil - Protection Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Plus_Jakarta_Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed": "#afefdd",
+              "on-primary": "#00594c",
+              "inverse-on-surface": "#555555",
+              "primary-dim": "#4fe5ca",
+              "primary-fixed-dim": "#4fe5ca",
+              "primary-container": "#08c1a6",
+              "background": "#0e0e0e",
+              "on-secondary-container": "#a1e1cf",
+              "tertiary": "#68d3ff",
+              "surface-container": "#191919",
+              "surface-variant": "#262626",
+              "tertiary-container": "#04c8fe",
+              "error-dim": "#d7383b",
+              "on-secondary": "#195c4e",
+              "on-tertiary-container": "#003c4e",
+              "tertiary-dim": "#00b9ec",
+              "surface-tint": "#61f4d8",
+              "surface-container-lowest": "#000000",
+              "surface-dim": "#0e0e0e",
+              "error": "#ff716c",
+              "surface-container-low": "#131313",
+              "on-primary-fixed": "#00443a",
+              "on-primary-fixed-variant": "#006455",
+              "on-tertiary-fixed": "#002431",
+              "outline-variant": "#484848",
+              "on-primary-container": "#00332b",
+              "secondary": "#afefdd",
+              "surface-bright": "#2c2c2c",
+              "outline": "#757575",
+              "on-error": "#490006",
+              "error-container": "#9f0519",
+              "on-surface-variant": "#ababab",
+              "surface": "#0e0e0e",
+              "surface-container-highest": "#262626",
+              "on-background": "#ffffff",
+              "inverse-surface": "#f9f9f9",
+              "primary-fixed": "#61f4d8",
+              "on-error-container": "#ffa8a3",
+              "secondary-dim": "#a1e1cf",
+              "tertiary-fixed-dim": "#00b9ec",
+              "secondary-container": "#0b5345",
+              "on-secondary-fixed-variant": "#266658",
+              "on-tertiary": "#00465b",
+              "on-tertiary-fixed-variant": "#00455a",
+              "surface-container-high": "#1f1f1f",
+              "on-surface": "#ffffff",
+              "secondary-fixed-dim": "#a1e1cf",
+              "tertiary-fixed": "#04c8fe",
+              "inverse-primary": "#006c5c",
+              "primary": "#61f4d8",
+              "on-secondary-fixed": "#00483c"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(25, 25, 25, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .geometric-bg {
+            background-image: radial-gradient(circle at 2px 2px, rgba(97, 244, 216, 0.03) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+        body {
+            min-height: 100dvh;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #61f4d8;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 4px solid #0b5345;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-on-primary-container geometric-bg pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e]/80 backdrop-blur-xl flex items-center justify-between px-6 h-16 shadow-[0_4px_30px_rgba(0,0,0,0.5)] border-b border-outline-variant/10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#61f4d8] text-2xl" data-icon="shield">shield</span>
+<h1 class="font-headline font-extrabold text-xl tracking-tighter text-[#61f4d8]">HaramVeil</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-variant transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<div class="w-9 h-9 rounded-full bg-surface-container-highest border border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzEE24_kkrVNsRF6xuwvD1-E17L6qJUBmpj9wMcR5HOdIbkofutyz_0i4ZpCF28GVKpU43-LfwKTKuJiAdjqE3APsjSgHucMu5SsmxKawAdiEZ8kTr4LDaAQTNL4KUnuaQqvwo23bWQLAS3_8Ue0oUS_dTg2QA-wDBpgLVhU2GweneoLQ51JnoJM7tG26T9W5u0yEv7rxvZ1FWO5ctmahk2k1tZthDBH4pOJvQGsfhA8ucMbjoyl1Vo-ytc0gBpRMml7NcasvybD7f"/>
+</div>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto space-y-10">
+<!-- Hero Section -->
+<section class="space-y-2">
+<span class="text-primary font-label text-[11px] uppercase tracking-[0.25em] font-bold">Guardian Control</span>
+<h2 class="font-headline text-3xl font-extrabold tracking-tight">Protection Settings</h2>
+<p class="text-on-surface-variant text-base leading-relaxed max-w-md">Customize your spiritual sanctuary. Fine-tune how the veil interacts with your digital landscape.</p>
+</section>
+<!-- Detection Section -->
+<section class="space-y-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="visibility">visibility</span>
+<h3 class="font-headline text-lg font-bold">Detection</h3>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Text Detection Card -->
+<div class="bg-surface-container rounded-2xl p-6 flex flex-col justify-between h-36 border border-outline-variant/10">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary" data-icon="text_fields">text_fields</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div>
+<h4 class="font-bold text-base">Text Detection</h4>
+<p class="text-xs text-on-surface-variant">Filter prohibited keywords</p>
+</div>
+</div>
+<!-- Image Detection Card -->
+<div class="bg-surface-container rounded-2xl p-6 flex flex-col justify-between h-36 border border-outline-variant/10">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary" data-icon="image">image</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div>
+<h4 class="font-bold text-base">Image Detection</h4>
+<p class="text-xs text-on-surface-variant">AI-powered visual blurring</p>
+</div>
+</div>
+<!-- Sensitivity Slider Card -->
+<div class="sm:col-span-2 bg-surface-container-high rounded-2xl p-6 space-y-6 border border-outline-variant/20 shadow-lg">
+<div class="flex justify-between items-center">
+<h4 class="font-bold text-base">Sensitivity Level</h4>
+<span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-bold uppercase tracking-wider">High Accuracy</span>
+</div>
+<div class="px-1">
+<input class="w-full h-1.5 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="0" type="range" value="75"/>
+<div class="flex justify-between text-[10px] text-on-surface-variant mt-4 font-bold uppercase tracking-widest px-1">
+<span>Low</span>
+<span>Balanced</span>
+<span>High</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Blocking Behavior Section -->
+<section class="space-y-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="block">block</span>
+<h3 class="font-headline text-lg font-bold">Blocking Behavior</h3>
+</div>
+<div class="bg-surface-container rounded-2xl border border-outline-variant/10 divide-y divide-outline-variant/10 overflow-hidden">
+<!-- List Item 1 -->
+<div class="flex items-center justify-between p-5 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface text-xl" data-icon="layers">layers</span>
+</div>
+<div>
+<p class="font-bold text-sm">Show block screen</p>
+<p class="text-xs text-on-surface-variant">Display visual warning</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- Text Input Area -->
+<div class="p-5 space-y-3 bg-surface-container-low/30">
+<label class="text-[11px] font-bold uppercase tracking-widest text-primary px-1">Custom block message</label>
+<input class="w-full bg-surface-container-highest border border-outline-variant/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none placeholder:text-outline/40" placeholder="Content restricted for your protection." type="text"/>
+</div>
+<!-- List Item 2 -->
+<div class="flex items-center justify-between p-5 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface text-xl" data-icon="lock">lock</span>
+</div>
+<div>
+<p class="font-bold text-sm">Password protection</p>
+<p class="text-xs text-on-surface-variant">Require PIN to modify</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Notifications Section -->
+<section class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+<h3 class="font-headline text-lg font-bold">Notifications</h3>
+</div>
+<div class="bg-surface-container-low border border-outline-variant/10 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl" data-icon="campaign">campaign</span>
+</div>
+<div>
+<p class="font-bold text-sm">Notify when blocked</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Instant alert delivery</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</section>
+<!-- Danger Zone -->
+<section class="pt-8 pb-12 flex justify-center">
+<button class="flex items-center gap-2 text-error border border-error/20 px-8 py-3 rounded-full hover:bg-error/10 transition-colors font-bold text-sm uppercase tracking-widest">
+<span class="material-symbols-outlined text-lg" data-icon="delete">delete</span>
+            Reset All Filters
+        </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-3 bg-background/95 backdrop-blur-2xl border-t border-outline-variant/10 z-50">
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-2 px-4 hover:text-primary transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-body font-medium text-[10px] uppercase tracking-wider">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-2 px-4 hover:text-primary transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="fact_check">fact_check</span>
+<span class="font-body font-medium text-[10px] uppercase tracking-wider">Blocklist</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-2xl px-6 py-2.5 shadow-[0_8px_20px_rgba(97,244,216,0.3)] active:scale-95" href="#">
+<span class="material-symbols-outlined mb-0.5" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-body font-bold text-[10px] uppercase tracking-wider">Settings</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant py-2 px-4 hover:text-primary transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="info">info</span>
+<span class="font-body font-medium text-[10px] uppercase tracking-wider">About</span>
+</a>
+</nav>
+</body></html>

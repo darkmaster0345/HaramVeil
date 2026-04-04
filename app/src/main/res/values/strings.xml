@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HaramVeil</string>
+    <string name="loading_message">HaramVeil is loading...</string>
+    <string name="accessibility_service_description">HaramVeil monitors the visible app UI to detect high-risk content on device.</string>
+</resources>

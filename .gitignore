@@ -1,0 +1,18 @@
+# HaramVeil local build and IDE noise
+.gradle/
+.gradle-user/
+.android-user/
+.kotlin/
+.vscode/
+
+# Android local machine configuration
+local.properties
+
+# Gradle and Android build outputs
+build/
+app/build/
+*/build/
+
+# OS artifacts
+Thumbs.db
+Desktop.ini

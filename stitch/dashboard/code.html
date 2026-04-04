@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HaramVeil Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed": "#afefdd",
+              "on-primary": "#00594c",
+              "inverse-on-surface": "#555555",
+              "primary-dim": "#4fe5ca",
+              "primary-fixed-dim": "#4fe5ca",
+              "primary-container": "#08c1a6",
+              "background": "#0e0e0e",
+              "on-secondary-container": "#a1e1cf",
+              "tertiary": "#68d3ff",
+              "surface-container": "#191919",
+              "surface-variant": "#262626",
+              "tertiary-container": "#04c8fe",
+              "error-dim": "#d7383b",
+              "on-secondary": "#195c4e",
+              "on-tertiary-container": "#003c4e",
+              "tertiary-dim": "#00b9ec",
+              "surface-tint": "#61f4d8",
+              "surface-container-lowest": "#000000",
+              "surface-dim": "#0e0e0e",
+              "error": "#ff716c",
+              "surface-container-low": "#131313",
+              "on-primary-fixed": "#00443a",
+              "on-primary-fixed-variant": "#006455",
+              "on-tertiary-fixed": "#002431",
+              "outline-variant": "#484848",
+              "on-primary-container": "#00332b",
+              "secondary": "#afefdd",
+              "surface-bright": "#2c2c2c",
+              "outline": "#757575",
+              "on-error": "#490006",
+              "error-container": "#9f0519",
+              "on-surface-variant": "#ababab",
+              "surface": "#0e0e0e",
+              "surface-container-highest": "#262626",
+              "on-background": "#ffffff",
+              "inverse-surface": "#f9f9f9",
+              "primary-fixed": "#61f4d8",
+              "on-error-container": "#ffa8a3",
+              "secondary-dim": "#a1e1cf",
+              "tertiary-fixed-dim": "#00b9ec",
+              "secondary-container": "#0b5345",
+              "on-secondary-fixed-variant": "#266658",
+              "on-tertiary": "#00465b",
+              "on-tertiary-fixed-variant": "#00455a",
+              "surface-container-high": "#1f1f1f",
+              "on-surface": "#ffffff",
+              "secondary-fixed-dim": "#a1e1cf",
+              "tertiary-fixed": "#04c8fe",
+              "inverse-primary": "#006c5c",
+              "primary": "#61f4d8",
+              "on-secondary-fixed": "#00483c"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-geometric-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l15 30-15 30-15-30z' fill='%2361f4d8' fill-opacity='0.03'/%3E%3C/svg%3E");
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container/30">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e]/80 backdrop-blur-xl bg-gradient-to-b from-[#191919] to-transparent shadow-[0_0_64_0_rgba(97,244,216,0.06)] flex items-center justify-between px-6 h-16 w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#61f4d8]" style="font-variation-settings: 'FILL' 1;">shield</span>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-2xl text-[#61f4d8] tracking-tighter">HaramVeil</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#262626] transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-400">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="User profile avatar placeholder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp7wC-2D4F6CmvRmtfeUv-O3rAUdU3Lk_r5sqTdrXUbsmW_KiWayZrIWdigGGQ7fiWz_S-QF5x3rW4wIjt_hYvHFMOE1eXuOymSXav_WzKIwYvQhV5WBHYXxoLTqwyTzbst9j_uc4w2-rkplrez9lEYEzDhPkriFP8nGQh4CTv9KmvB7HklANA924fllFqZh8Au-U_LlEuRL3P8fyIalN4iQdgVot11HNFkTCerxAEcYPC4vQ6z3leNA5wV_uFX0suE5nZ236aQvRj"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-2xl mx-auto min-h-screen bg-geometric-pattern">
+<!-- The Veil Toggle Section -->
+<section class="flex flex-col items-center justify-center mb-12">
+<div class="relative mb-8">
+<!-- Outer Glow Orbits -->
+<div class="absolute inset-0 rounded-full bg-primary/10 blur-[80px] scale-150"></div>
+<div class="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse"></div>
+<!-- Main Shield Button -->
+<div class="relative w-48 h-48 bg-surface-container-high rounded-xl flex items-center justify-center shadow-[0_0_64_0_rgba(97,244,216,0.15)] group cursor-pointer transition-transform hover:scale-105 duration-500">
+<span class="material-symbols-outlined text-primary text-[84px]" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+</div>
+<div class="text-center">
+<h2 class="font-headline font-extrabold text-display-md mb-2 tracking-tight">Protection is ON</h2>
+<p class="text-on-surface-variant text-body-lg mb-6">Your digital sanctuary is active.</p>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary-container px-10 py-4 rounded-full font-bold flex items-center gap-3 shadow-[0_0_32_0_rgba(97,244,216,0.3)] hover:brightness-110 active:scale-95 transition-all">
+<span>DEACTIVATE VEIL</span>
+<span class="material-symbols-outlined">power_settings_new</span>
+</button>
+</div>
+</section>
+<!-- Stats Grid (Bento Style) -->
+<section class="grid grid-cols-2 gap-4 mb-10">
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+<span class="label-sm text-on-surface-variant uppercase tracking-widest font-bold block mb-1">Blocked Today</span>
+<div class="flex items-end gap-2">
+<span class="text-4xl font-headline font-extrabold text-primary">12</span>
+<span class="material-symbols-outlined text-primary mb-1 text-sm">trending_up</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+<span class="label-sm text-on-surface-variant uppercase tracking-widest font-bold block mb-1">Total Blocked</span>
+<div class="flex items-end gap-2">
+<span class="text-4xl font-headline font-extrabold text-white">847</span>
+<span class="material-symbols-outlined text-on-surface-variant mb-1 text-sm">security</span>
+</div>
+</div>
+</section>
+<!-- Activity Feed -->
+<section class="bg-surface-container p-8 rounded-xl relative overflow-hidden">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-headline font-bold text-xl">Recent Activity</h3>
+<button class="text-primary font-bold text-sm hover:underline">View All</button>
+</div>
+<div class="space-y-6">
+<!-- Activity Item 1 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-high rounded-lg hover:bg-surface-bright transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-error-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-xl">block</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Adult Site</p>
+<p class="text-sm text-on-surface-variant">10:30 AM</p>
+</div>
+</div>
+<span class="px-3 py-1 bg-error-container text-on-error-container text-[10px] font-bold rounded-full uppercase tracking-tighter">Harmful Content</span>
+</div>
+<!-- Activity Item 2 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-high rounded-lg hover:bg-surface-bright transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-xl">casino</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Gambling</p>
+<p class="text-sm text-on-surface-variant">09:15 AM</p>
+</div>
+</div>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded-full uppercase tracking-tighter">Restricted</span>
+</div>
+<!-- Activity Item 3 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-high rounded-lg hover:bg-surface-bright transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">ads_click</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Tracking Script</p>
+<p class="text-sm text-on-surface-variant">08:45 AM</p>
+</div>
+</div>
+<span class="px-3 py-1 bg-surface-variant text-on-surface-variant text-[10px] font-bold rounded-full uppercase tracking-tighter">Privacy</span>
+</div>
+</div>
+<!-- Subtle Geometric Pattern in card -->
+<div class="absolute -bottom-10 -right-10 w-40 h-40 opacity-5 pointer-events-none">
+<svg class="text-primary" fill="currentColor" viewbox="0 0 100 100">
+<path d="M50 0L61.2 38.8H100L68.8 61.2L80 100L50 77.6L20 100L31.2 61.2L0 38.8H38.8L50 0Z"></path>
+</svg>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#0e0e0e]/90 backdrop-blur-2xl rounded-t-[3rem] z-50 shadow-[0_-8px_32px_0_rgba(97,244,216,0.05)]">
+<!-- Home Tab (Active) -->
+<a class="flex flex-col items-center justify-center bg-gradient-to-br from-[#61f4d8] to-[#08c1a6] text-[#004D40] rounded-full px-6 py-2 transition-all active:scale-90 duration-150 ease-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Home</span>
+</a>
+<!-- Blocklist Tab -->
+<a class="flex flex-col items-center justify-center text-[#ffffff]/60 py-2 hover:text-[#61f4d8] transition-all active:scale-90 duration-150 ease-out" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Blocklist</span>
+</a>
+<!-- Settings Tab -->
+<a class="flex flex-col items-center justify-center text-[#ffffff]/60 py-2 hover:text-[#61f4d8] transition-all active:scale-90 duration-150 ease-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">Settings</span>
+</a>
+<!-- About Tab -->
+<a class="flex flex-col items-center justify-center text-[#ffffff]/60 py-2 hover:text-[#61f4d8] transition-all active:scale-90 duration-150 ease-out" href="#">
+<span class="material-symbols-outlined">info</span>
+<span class="font-['Plus_Jakarta_Sans'] font-medium text-[12px]">About</span>
+</a>
+</nav>
+</body></html>

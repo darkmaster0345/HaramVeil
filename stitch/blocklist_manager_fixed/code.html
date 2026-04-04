@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HaramVeil - Blocklist Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Plus_Jakarta_Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-fixed": "#afefdd",
+                        "on-primary": "#00594c",
+                        "inverse-on-surface": "#555555",
+                        "primary-dim": "#4fe5ca",
+                        "primary-fixed-dim": "#4fe5ca",
+                        "primary-container": "#08c1a6",
+                        "background": "#0e0e0e",
+                        "on-secondary-container": "#a1e1cf",
+                        "tertiary": "#68d3ff",
+                        "surface-container": "#191919",
+                        "surface-variant": "#262626",
+                        "tertiary-container": "#04c8fe",
+                        "error-dim": "#d7383b",
+                        "on-secondary": "#195c4e",
+                        "on-tertiary-container": "#003c4e",
+                        "tertiary-dim": "#00b9ec",
+                        "surface-tint": "#61f4d8",
+                        "surface-container-lowest": "#000000",
+                        "surface-dim": "#0e0e0e",
+                        "error": "#ff716c",
+                        "surface-container-low": "#131313",
+                        "on-primary-fixed": "#00443a",
+                        "on-primary-fixed-variant": "#006455",
+                        "on-tertiary-fixed": "#002431",
+                        "outline-variant": "#484848",
+                        "on-primary-container": "#00332b",
+                        "secondary": "#afefdd",
+                        "surface-bright": "#2c2c2c",
+                        "outline": "#757575",
+                        "on-error": "#490006",
+                        "error-container": "#9f0519",
+                        "on-surface-variant": "#ababab",
+                        "surface": "#0e0e0e",
+                        "surface-container-highest": "#262626",
+                        "on-background": "#ffffff",
+                        "inverse-surface": "#f9f9f9",
+                        "primary-fixed": "#61f4d8",
+                        "on-error-container": "#ffa8a3",
+                        "secondary-dim": "#a1e1cf",
+                        "tertiary-fixed-dim": "#00b9ec",
+                        "secondary-container": "#0b5345",
+                        "on-secondary-fixed-variant": "#266658",
+                        "on-tertiary": "#00465b",
+                        "on-tertiary-fixed-variant": "#00455a",
+                        "surface-container-high": "#1f1f1f",
+                        "on-surface": "#ffffff",
+                        "secondary-fixed-dim": "#a1e1cf",
+                        "tertiary-fixed": "#04c8fe",
+                        "inverse-primary": "#006c5c",
+                        "primary": "#61f4d8",
+                        "on-secondary-fixed": "#00483c"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0e0e0e;
+        }
+        .geometric-bg {
+            background-image: radial-gradient(circle at 2px 2px, rgba(97, 244, 216, 0.03) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col geometric-bg">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e]/95 backdrop-blur-xl border-b border-outline-variant/10">
+<div class="flex items-center justify-between px-6 h-16 max-w-2xl mx-auto w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="shield">shield</span>
+<h1 class="font-headline font-bold text-xl text-primary tracking-tight">HaramVeil</h1>
+</div>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors text-sm" href="#">Home</a>
+<a class="text-primary font-bold text-sm" href="#">Blocklist</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors text-sm" href="#">Settings</a>
+</div>
+<button class="md:hidden text-on-surface p-2">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 pt-24 pb-40 px-6 max-w-2xl mx-auto w-full relative">
+<!-- Header Section -->
+<div class="mb-8">
+<h2 class="font-headline font-extrabold text-3xl mb-3 tracking-tight">Blocked Keywords</h2>
+<p class="text-on-surface-variant font-body text-sm leading-relaxed">Manage the terms and phrases your sanctuary filters out across all platforms automatically.</p>
+</div>
+<!-- Search Bar -->
+<div class="relative mb-8 group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline text-[20px]">search</span>
+</div>
+<input class="w-full bg-surface-container-high border border-outline-variant/20 rounded-2xl py-3.5 pl-12 pr-6 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all font-body text-sm" placeholder="Search your keywords..." type="text"/>
+</div>
+<!-- Blocked Keywords Chips -->
+<div class="space-y-4">
+<div class="flex flex-wrap gap-2.5">
+<!-- Chip Items -->
+<div class="bg-surface-container-high hover:bg-surface-bright group flex items-center gap-1.5 pl-4 pr-1.5 py-1.5 rounded-full transition-all border border-outline-variant/20 shadow-sm">
+<span class="text-on-surface font-medium text-sm">alcohol</span>
+<button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-error/15 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="bg-surface-container-high hover:bg-surface-bright group flex items-center gap-1.5 pl-4 pr-1.5 py-1.5 rounded-full transition-all border border-outline-variant/20 shadow-sm">
+<span class="text-on-surface font-medium text-sm">gambling</span>
+<button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-error/15 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="bg-surface-container-high hover:bg-surface-bright group flex items-center gap-1.5 pl-4 pr-1.5 py-1.5 rounded-full transition-all border border-outline-variant/20 shadow-sm">
+<span class="text-on-surface font-medium text-sm">zina</span>
+<button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-error/15 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="bg-surface-container-high hover:bg-surface-bright group flex items-center gap-1.5 pl-4 pr-1.5 py-1.5 rounded-full transition-all border border-outline-variant/20 shadow-sm">
+<span class="text-on-surface font-medium text-sm">drugs</span>
+<button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-error/15 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="bg-surface-container-high hover:bg-surface-bright group flex items-center gap-1.5 pl-4 pr-1.5 py-1.5 rounded-full transition-all border border-outline-variant/20 shadow-sm">
+<span class="text-on-surface font-medium text-sm">adult</span>
+<button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-error/15 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Info Card -->
+<div class="mt-12 bg-surface-container rounded-2xl p-6 relative overflow-hidden border border-outline-variant/10">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="auto_awesome">auto_awesome</span>
+<h3 class="font-headline font-bold text-base">Smart Filtering</h3>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed max-w-sm">Our AI Guardian automatically identifies variations and slang related to your keywords for maximum protection.</p>
+</div>
+<div class="absolute -right-6 -bottom-6 opacity-5 rotate-12">
+<span class="material-symbols-outlined text-[120px]" data-icon="shield_lock">shield_lock</span>
+</div>
+</div>
+</main>
+<!-- Floating Action Button - Positioned above BottomNav -->
+<button class="fixed bottom-24 right-6 w-14 h-14 rounded-2xl bg-primary text-on-primary shadow-lg shadow-primary/20 flex items-center justify-center z-40 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-2xl">add</span>
+</button>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full bg-surface-container-lowest/95 backdrop-blur-2xl border-t border-outline-variant/10 z-50 md:hidden">
+<div class="max-w-2xl mx-auto flex justify-around items-center px-4 pt-3 pb-6 safe-area-bottom">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center gap-1 text-on-surface-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body font-medium text-[10px]">Home</span>
+</a>
+<!-- Blocklist (ACTIVE) -->
+<a class="flex flex-col items-center justify-center gap-1 text-primary px-4 py-1" href="#">
+<div class="relative">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fact_check</span>
+<div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"></div>
+</div>
+<span class="font-body font-bold text-[10px]">Blocklist</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center gap-1 text-on-surface-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body font-medium text-[10px]">Settings</span>
+</a>
+<!-- About -->
+<a class="flex flex-col items-center justify-center gap-1 text-on-surface-variant px-4 py-1" href="#">
+<span class="material-symbols-outlined">info</span>
+<span class="font-body font-medium text-[10px]">About</span>
+</a>
+</div>
+</nav>
+<!-- Bottom Sheet Dialog (Hidden by default, keeping structure for visual reference if needed) -->
+<!-- Added 'hidden' to avoid initial overlap, remove 'hidden' to show -->
+<div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex flex-col justify-end hidden">
+<div class="bg-surface-container-high rounded-t-3xl p-8 max-w-2xl mx-auto w-full shadow-2xl border-t border-outline-variant/10">
+<div class="w-10 h-1 bg-outline-variant/40 rounded-full mx-auto mb-8"></div>
+<h3 class="font-headline font-bold text-2xl mb-6">Add Keyword</h3>
+<div class="space-y-6">
+<div>
+<label class="block text-primary font-bold text-xs uppercase tracking-widest mb-3 ml-1">Keyword</label>
+<input class="w-full bg-surface-bright border-none rounded-xl py-4 px-6 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/30 transition-all font-body" placeholder="Enter term to block..." type="text"/>
+</div>
+<div class="flex gap-3 pt-2">
+<button class="flex-1 py-4 px-6 rounded-2xl bg-primary text-on-primary font-bold tracking-tight hover:opacity-95 active:scale-[0.98] transition-all">
+                        Add to List
+                    </button>
+<button class="px-8 py-4 rounded-2xl border border-outline-variant text-on-surface font-medium hover:bg-surface-variant transition-colors">
+                        Cancel
+                    </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Background Accents -->
+<div class="fixed top-0 right-0 -z-10 w-full h-full pointer-events-none overflow-hidden">
+<div class="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-primary/5 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-[20%] left-[-10%] w-[250px] h-[250px] bg-primary-container/5 rounded-full blur-[80px]"></div>
+</div>
+</body></html>

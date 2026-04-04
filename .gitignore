@@ -16,3 +16,6 @@ app/build/
 # OS artifacts
 Thumbs.db
 Desktop.ini
+stitch/
+manifests/
+UI_MOCKUPS.txt

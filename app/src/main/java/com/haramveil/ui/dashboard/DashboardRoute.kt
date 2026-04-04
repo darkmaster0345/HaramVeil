@@ -18,4 +18,6 @@
 
 package com.haramveil.ui.dashboard
 
-object DashboardRoute
+object DashboardRoute {
+    const val route = "main/dashboard"
+}

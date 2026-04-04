@@ -18,4 +18,6 @@
 
 package com.haramveil.ui.stats
 
-object StatsRoute
+object StatsRoute {
+    const val route = "main/stats"
+}

@@ -113,7 +113,7 @@ import com.haramveil.data.models.SecurityQuestionCatalog
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
 import com.haramveil.security.HaramVeilDeviceAdminReceiver
-import com.haramveil.ui.dashboard.DashboardScreen
+import com.haramveil.ui.HaramVeilMainShell
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -249,10 +249,15 @@ fun HaramVeilRoot(
             )
         }
         composable(AppDestination.Dashboard.route) {
-            DashboardScreen(
-                modesSummary = uiState.enabledModesSummary,
-                selectedEngineSummary = uiState.selectedTextEngine.displayName,
-                monitoredAppsCount = uiState.monitoredAppsCount,
+            HaramVeilMainShell(
+                selectedTextEngine = uiState.selectedTextEngine,
+                selectedVisualModel = uiState.selectedVisualModel,
+                supports640Model = uiState.benchmark.supportedModel == VisualModelOption.MODEL_640,
+                mode1Enabled = uiState.mode1Enabled,
+                mode2Enabled = uiState.mode2Enabled,
+                mode3Enabled = uiState.mode3Enabled,
+                installedApps = uiState.installedApps,
+                selectedPackages = uiState.selectedPackages,
             )
         }
     }

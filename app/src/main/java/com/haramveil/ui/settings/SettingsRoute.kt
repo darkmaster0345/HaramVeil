@@ -18,4 +18,7 @@
 
 package com.haramveil.ui.settings
 
-object SettingsRoute
+object SettingsRoute {
+    const val route = "main/settings"
+    const val advancedRoute = "main/settings/advanced"
+}

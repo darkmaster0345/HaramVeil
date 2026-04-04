@@ -105,7 +105,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.haramveil.accessibility.HaramVeilAccessibilityService
+import com.haramveil.accessibility.isHaramVeilAccessibilityServiceEnabled
+import com.haramveil.accessibility.openHaramVeilAccessibilitySettings
 import com.haramveil.data.models.InstalledAppInfo
 import com.haramveil.data.models.PermissionReviewState
 import com.haramveil.data.models.SecurityQuestion
@@ -902,7 +903,7 @@ private fun PermissionsScreen(
                 description = "Needed so HaramVeil can read the visible app UI tree and catch risky text before taking any screenshot.",
                 isGranted = permissionState.accessibilityGranted,
                 buttonLabel = "Open Accessibility Settings",
-                onGrant = { openAccessibilitySettings(context) },
+                onGrant = { openHaramVeilAccessibilitySettings(context) },
             )
             PermissionCard(
                 title = "Draw Over Apps",
@@ -1570,7 +1571,7 @@ private fun buildPermissionState(
     context: Context,
     selectedTextEngine: TextRecognitionEngine,
 ): PermissionReviewState {
-    val accessibilityGranted = isAccessibilityServiceEnabled(context)
+    val accessibilityGranted = isHaramVeilAccessibilityServiceEnabled(context)
     val overlayGranted = Settings.canDrawOverlays(context)
     val deviceAdminGranted = isDeviceAdminEnabled(context)
     return PermissionReviewState(
@@ -1581,27 +1582,10 @@ private fun buildPermissionState(
     )
 }
 
-private fun isAccessibilityServiceEnabled(context: Context): Boolean {
-    val enabledServices = Settings.Secure.getString(
-        context.contentResolver,
-        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
-    ) ?: return false
-    val expectedService = "${context.packageName}/${HaramVeilAccessibilityService::class.java.name}"
-    return enabledServices.split(':').any { it.equals(expectedService, ignoreCase = true) }
-}
-
 private fun isDeviceAdminEnabled(context: Context): Boolean {
     val devicePolicyManager = context.getSystemService(DevicePolicyManager::class.java)
     val componentName = ComponentName(context, HaramVeilDeviceAdminReceiver::class.java)
     return devicePolicyManager?.isAdminActive(componentName) == true
-}
-
-private fun openAccessibilitySettings(context: Context) {
-    context.startActivity(
-        Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        },
-    )
 }
 
 private fun openOverlaySettings(context: Context) {

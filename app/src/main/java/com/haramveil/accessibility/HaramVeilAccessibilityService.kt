@@ -18,12 +18,216 @@
 
 package com.haramveil.accessibility
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.util.Log
 import android.accessibilityservice.AccessibilityService
+import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityEvent
+import com.haramveil.data.local.ProtectionPreferencesRepository
+import com.haramveil.data.models.ProtectionSettings
+import com.haramveil.detection.mode1.RiskLevel
+import com.haramveil.detection.mode1.UITreeScanner
+import com.haramveil.utils.DetectionBus
+import com.haramveil.utils.DetectionTriggerMode
+import com.haramveil.utils.DispatcherProvider
+import com.haramveil.utils.Mode1WakeRequest
+import com.haramveil.utils.ThrottleManager
+import com.haramveil.utils.ThrottledScanTrigger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class HaramVeilAccessibilityService : AccessibilityService() {
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val dispatcherProvider = DispatcherProvider()
+    private val uiTreeScanner = UITreeScanner()
+    private lateinit var protectionPreferencesRepository: ProtectionPreferencesRepository
+    private val protectionSettingsState = MutableStateFlow(ProtectionSettings())
+    private var collectorsStarted = false
+    private lateinit var throttleManager: ThrottleManager
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) = Unit
+    override fun onCreate() {
+        super.onCreate()
+        protectionPreferencesRepository = ProtectionPreferencesRepository(applicationContext)
+        throttleManager = ThrottleManager(
+            scope = serviceScope,
+            dispatcherProvider = dispatcherProvider,
+        ) { pendingEvent ->
+            buildScanTrigger(pendingEvent.packageName, pendingEvent.eventType)
+        }
+    }
 
-    override fun onInterrupt() = Unit
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        serviceInfo = serviceInfo.apply {
+            eventTypes = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+            flags = flags or
+                AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
+                AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
+            notificationTimeout = 100
+        }
+        if (!collectorsStarted) {
+            startCollectors()
+            collectorsStarted = true
+        }
+        Log.i(LogTag, "Accessibility service connected.")
+    }
+
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event == null) {
+            return
+        }
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+        ) {
+            return
+        }
+
+        val currentSettings = protectionSettingsState.value
+        if (!currentSettings.mode1Enabled) {
+            return
+        }
+
+        val packageName = event.packageName
+            ?.toString()
+            ?.takeIf(String::isNotBlank)
+            ?: rootInActiveWindow?.packageName?.toString()?.takeIf(String::isNotBlank)
+            ?: return
+
+        if (packageName !in currentSettings.monitoredPackages) {
+            return
+        }
+
+        throttleManager.submit(
+            packageName = packageName,
+            eventType = event.eventType,
+        )
+    }
+
+    override fun onInterrupt() {
+        Log.w(LogTag, "Accessibility service interrupted by the system.")
+    }
+
+    override fun onDestroy() {
+        serviceScope.cancel()
+        super.onDestroy()
+    }
+
+    private fun startCollectors() {
+        serviceScope.launch(dispatcherProvider.io) {
+            protectionPreferencesRepository.settingsFlow.collectLatest { settings ->
+                protectionSettingsState.value = settings
+                throttleManager.updateDebounceMs(settings.frameSkipIntervalMs)
+            }
+        }
+
+        serviceScope.launch(dispatcherProvider.default) {
+            throttleManager.scanTriggers.collectLatest { trigger ->
+                trigger ?: return@collectLatest
+                processScanTrigger(trigger)
+            }
+        }
+    }
+
+    private suspend fun processScanTrigger(
+        trigger: ThrottledScanTrigger,
+    ) {
+        try {
+            val currentSettings = protectionSettingsState.value
+            val scanResult = uiTreeScanner.scan(
+                rootNode = trigger.rootNode,
+                packageName = trigger.packageName,
+                keywordBlocklist = currentSettings.keywordBlocklist,
+            )
+
+            if (!scanResult.triggered) {
+                return
+            }
+
+            val wakeMode2 = currentSettings.mode2Enabled
+            val wakeMode3 = scanResult.riskLevel == RiskLevel.HIGH && currentSettings.mode3Enabled
+            val matchDetails = buildMatchDetails(scanResult)
+
+            DetectionBus.publishMode1Triggered(
+                Mode1WakeRequest(
+                    scanResult = scanResult,
+                    wakeMode2 = wakeMode2,
+                    wakeMode3 = wakeMode3,
+                ),
+            )
+
+            when (scanResult.riskLevel) {
+                RiskLevel.MEDIUM -> {
+                    if (currentSettings.mode2Enabled) {
+                        DetectionBus.publishMode2Triggered(
+                            packageName = scanResult.packageName,
+                            matchDetails = matchDetails,
+                        )
+                    }
+                }
+
+                RiskLevel.HIGH -> {
+                    if (currentSettings.mode2Enabled) {
+                        DetectionBus.publishMode2Triggered(
+                            packageName = scanResult.packageName,
+                            matchDetails = matchDetails,
+                        )
+                    }
+                    if (currentSettings.mode3Enabled) {
+                        DetectionBus.publishMode3Triggered(
+                            packageName = scanResult.packageName,
+                            matchDetails = matchDetails,
+                        )
+                    }
+                    if (!currentSettings.mode2Enabled && !currentSettings.mode3Enabled) {
+                        DetectionBus.publishVeilRequested(
+                            packageName = scanResult.packageName,
+                            triggerMode = DetectionTriggerMode.MODE_1,
+                            matchDetails = matchDetails,
+                        )
+                    }
+                }
+
+                RiskLevel.LOW -> Unit
+            }
+
+            Log.i(
+                LogTag,
+                "Mode 1 triggered for ${scanResult.packageName} with ${scanResult.riskLevel} risk. $matchDetails",
+            )
+        } finally {
+            trigger.recycle()
+        }
+    }
+
+    private fun buildScanTrigger(
+        packageName: String,
+        eventType: Int,
+    ): ThrottledScanTrigger? {
+        val activeRoot = rootInActiveWindow ?: return null
+        val rootSnapshot = AccessibilityNodeInfo.obtain(activeRoot)
+        val nodeHash = uiTreeScanner.computeNodeHash(rootSnapshot)
+        return ThrottledScanTrigger(
+            packageName = packageName,
+            eventType = eventType,
+            nodeHash = nodeHash,
+            rootNode = rootSnapshot,
+        )
+    }
+
+    private fun buildMatchDetails(
+        scanResult: com.haramveil.detection.mode1.ScanResult,
+    ): String {
+        return scanResult.matchedKeyword?.let { keyword ->
+            "Matched keyword \"$keyword\" in visible UI content."
+        } ?: "Monitored package appears on the high-risk app list."
+    }
+
+    private companion object {
+        const val LogTag = "HaramVeilMode1"
+    }
 }

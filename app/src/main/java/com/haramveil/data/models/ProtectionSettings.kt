@@ -16,6 +16,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.haramveil.detection.mode1
+package com.haramveil.data.models
 
-object Mode1StaticNodeScanner
+data class ProtectionSettings(
+    val monitoredPackages: Set<String> = emptySet(),
+    val keywordBlocklist: List<String> = emptyList(),
+    val mode1Enabled: Boolean = true,
+    val mode2Enabled: Boolean = true,
+    val mode3Enabled: Boolean = false,
+    val selectedTextEngine: TextRecognitionEngine = TextRecognitionEngine.ML_KIT,
+    val selectedVisualModel: VisualModelOption? = null,
+    val frameSkipIntervalMs: Long = 500L,
+    val accessibilitySettingsPromptShown: Boolean = false,
+)

@@ -20,13 +20,8 @@ package com.haramveil.data.local
 
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.core.stringSetPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.haramveil.data.models.BenchmarkResult
 import com.haramveil.data.models.StoredOnboardingSnapshot
 import com.haramveil.data.models.StoredSecurityQuestion
@@ -36,14 +31,12 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import java.io.IOException
 
-private val Context.onboardingDataStore by preferencesDataStore(name = "haramveil_onboarding")
-
 class OnboardingPreferencesRepository(
     private val context: Context,
 ) {
 
     suspend fun readSnapshot(): StoredOnboardingSnapshot {
-        val preferences = context.onboardingDataStore.data
+        val preferences = context.haramVeilPreferencesDataStore.data
             .catch { throwable ->
                 if (throwable is IOException) {
                     emit(emptyPreferences())
@@ -53,33 +46,40 @@ class OnboardingPreferencesRepository(
             }
             .first()
 
-        val benchmark320Latency = preferences[Benchmark320LatencyKey]
-        val benchmark640Latency = preferences[Benchmark640LatencyKey]
-        val supportedModel = VisualModelOption.fromStorageValue(preferences[SupportedVisualModelKey])
+        val benchmark320Latency = preferences[HaramVeilPreferenceKeys.Benchmark320LatencyMs]
+        val benchmark640Latency = preferences[HaramVeilPreferenceKeys.Benchmark640LatencyMs]
+        val supportedModel = VisualModelOption.fromStorageValue(
+            preferences[HaramVeilPreferenceKeys.SupportedVisualModel],
+        )
         val benchmarkResult =
             if (benchmark320Latency != null || benchmark640Latency != null || supportedModel != null) {
                 BenchmarkResult(
                     model320LatencyMs = benchmark320Latency,
                     model640LatencyMs = benchmark640Latency,
                     supportedModel = supportedModel,
-                    latencyBudgetMs = preferences[BenchmarkLatencyBudgetKey] ?: DefaultLatencyBudgetMs,
-                    errorMessage = preferences[BenchmarkErrorKey],
+                    latencyBudgetMs = preferences[HaramVeilPreferenceKeys.BenchmarkLatencyBudgetMs]
+                        ?: HaramVeilPreferenceKeys.DefaultLatencyBudgetMs,
+                    errorMessage = preferences[HaramVeilPreferenceKeys.BenchmarkErrorMessage],
                 )
             } else {
                 null
             }
 
         return StoredOnboardingSnapshot(
-            onboardingComplete = preferences[OnboardingCompleteKey] ?: false,
+            onboardingComplete = preferences[HaramVeilPreferenceKeys.OnboardingComplete] ?: false,
             benchmarkResult = benchmarkResult,
-            selectedTextEngine = TextRecognitionEngine.fromStorageValue(preferences[TextEngineKey]),
-            selectedVisualModel = VisualModelOption.fromStorageValue(preferences[SelectedVisualModelKey]),
-            mode1Enabled = preferences[Mode1EnabledKey] ?: true,
-            mode2Enabled = preferences[Mode2EnabledKey] ?: true,
-            mode3Enabled = preferences[Mode3EnabledKey] ?: false,
-            modeConfigurationSaved = preferences[ModeConfigurationSavedKey] ?: false,
-            monitoredPackages = preferences[SelectedPackagesKey] ?: emptySet(),
-            appSelectionSaved = preferences[AppSelectionSavedKey] ?: false,
+            selectedTextEngine = TextRecognitionEngine.fromStorageValue(
+                preferences[HaramVeilPreferenceKeys.SelectedTextEngine],
+            ),
+            selectedVisualModel = VisualModelOption.fromStorageValue(
+                preferences[HaramVeilPreferenceKeys.SelectedVisualModel],
+            ),
+            mode1Enabled = preferences[HaramVeilPreferenceKeys.Mode1Enabled] ?: true,
+            mode2Enabled = preferences[HaramVeilPreferenceKeys.Mode2Enabled] ?: true,
+            mode3Enabled = preferences[HaramVeilPreferenceKeys.Mode3Enabled] ?: false,
+            modeConfigurationSaved = preferences[HaramVeilPreferenceKeys.ModeConfigurationSaved] ?: false,
+            monitoredPackages = preferences[HaramVeilPreferenceKeys.SelectedPackages] ?: emptySet(),
+            appSelectionSaved = preferences[HaramVeilPreferenceKeys.AppSelectionSaved] ?: false,
             securityQuestions = buildList {
                 for (slot in 1..3) {
                     val questionId = preferences[questionKey(slot)]
@@ -94,28 +94,28 @@ class OnboardingPreferencesRepository(
                     }
                 }
             },
-            securitySetupSaved = preferences[SecuritySetupSavedKey] ?: false,
+            securitySetupSaved = preferences[HaramVeilPreferenceKeys.SecuritySetupSaved] ?: false,
         )
     }
 
     suspend fun saveBenchmarkResult(result: BenchmarkResult) {
-        context.onboardingDataStore.edit { preferences ->
-            preferences[BenchmarkLatencyBudgetKey] = result.latencyBudgetMs
-            result.model320LatencyMs?.let { preferences[Benchmark320LatencyKey] = it }
-            result.model640LatencyMs?.let { preferences[Benchmark640LatencyKey] = it }
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.BenchmarkLatencyBudgetMs] = result.latencyBudgetMs
+            result.model320LatencyMs?.let { preferences[HaramVeilPreferenceKeys.Benchmark320LatencyMs] = it }
+            result.model640LatencyMs?.let { preferences[HaramVeilPreferenceKeys.Benchmark640LatencyMs] = it }
             if (result.model320LatencyMs == null) {
-                preferences.remove(Benchmark320LatencyKey)
+                preferences.remove(HaramVeilPreferenceKeys.Benchmark320LatencyMs)
             }
             if (result.model640LatencyMs == null) {
-                preferences.remove(Benchmark640LatencyKey)
+                preferences.remove(HaramVeilPreferenceKeys.Benchmark640LatencyMs)
             }
-            result.supportedModel?.let { preferences[SupportedVisualModelKey] = it.storageValue }
+            result.supportedModel?.let { preferences[HaramVeilPreferenceKeys.SupportedVisualModel] = it.storageValue }
             if (result.supportedModel == null) {
-                preferences.remove(SupportedVisualModelKey)
+                preferences.remove(HaramVeilPreferenceKeys.SupportedVisualModel)
             }
-            result.errorMessage?.let { preferences[BenchmarkErrorKey] = it }
+            result.errorMessage?.let { preferences[HaramVeilPreferenceKeys.BenchmarkErrorMessage] = it }
             if (result.errorMessage == null) {
-                preferences.remove(BenchmarkErrorKey)
+                preferences.remove(HaramVeilPreferenceKeys.BenchmarkErrorMessage)
             }
         }
     }
@@ -127,29 +127,29 @@ class OnboardingPreferencesRepository(
         mode2Enabled: Boolean,
         mode3Enabled: Boolean,
     ) {
-        context.onboardingDataStore.edit { preferences ->
-            preferences[TextEngineKey] = textEngine.storageValue
-            preferences[Mode1EnabledKey] = mode1Enabled
-            preferences[Mode2EnabledKey] = mode2Enabled
-            preferences[Mode3EnabledKey] = mode3Enabled
-            preferences[ModeConfigurationSavedKey] = true
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.SelectedTextEngine] = textEngine.storageValue
+            preferences[HaramVeilPreferenceKeys.Mode1Enabled] = mode1Enabled
+            preferences[HaramVeilPreferenceKeys.Mode2Enabled] = mode2Enabled
+            preferences[HaramVeilPreferenceKeys.Mode3Enabled] = mode3Enabled
+            preferences[HaramVeilPreferenceKeys.ModeConfigurationSaved] = true
             if (visualModel != null) {
-                preferences[SelectedVisualModelKey] = visualModel.storageValue
+                preferences[HaramVeilPreferenceKeys.SelectedVisualModel] = visualModel.storageValue
             } else {
-                preferences.remove(SelectedVisualModelKey)
+                preferences.remove(HaramVeilPreferenceKeys.SelectedVisualModel)
             }
         }
     }
 
     suspend fun saveSelectedPackages(packageNames: Set<String>) {
-        context.onboardingDataStore.edit { preferences ->
-            preferences[SelectedPackagesKey] = packageNames
-            preferences[AppSelectionSavedKey] = true
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.SelectedPackages] = packageNames
+            preferences[HaramVeilPreferenceKeys.AppSelectionSaved] = true
         }
     }
 
     suspend fun saveSecurityQuestions(questions: List<StoredSecurityQuestion>) {
-        context.onboardingDataStore.edit { preferences ->
+        context.haramVeilPreferencesDataStore.edit { preferences ->
             for (slot in 1..3) {
                 preferences.remove(questionKey(slot))
                 preferences.remove(answerHashKey(slot))
@@ -159,39 +159,19 @@ class OnboardingPreferencesRepository(
                 preferences[questionKey(slot)] = question.questionId
                 preferences[answerHashKey(slot)] = question.answerHash
             }
-            preferences[SecuritySetupSavedKey] = questions.size == 3
+            preferences[HaramVeilPreferenceKeys.SecuritySetupSaved] = questions.size == 3
         }
     }
 
     suspend fun markOnboardingComplete() {
-        context.onboardingDataStore.edit { preferences ->
-            preferences[OnboardingCompleteKey] = true
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.OnboardingComplete] = true
         }
     }
 
     private fun questionKey(slot: Int): Preferences.Key<String> =
-        stringPreferencesKey("security_question_${slot}_id")
+        HaramVeilPreferenceKeys.securityQuestionKey(slot)
 
     private fun answerHashKey(slot: Int): Preferences.Key<String> =
-        stringPreferencesKey("security_question_${slot}_answer_hash")
-
-    private companion object {
-        const val DefaultLatencyBudgetMs = 1_500L
-
-        val OnboardingCompleteKey = booleanPreferencesKey("onboarding_complete")
-        val Benchmark320LatencyKey = longPreferencesKey("benchmark_320_latency_ms")
-        val Benchmark640LatencyKey = longPreferencesKey("benchmark_640_latency_ms")
-        val BenchmarkLatencyBudgetKey = longPreferencesKey("benchmark_latency_budget_ms")
-        val BenchmarkErrorKey = stringPreferencesKey("benchmark_error_message")
-        val SupportedVisualModelKey = stringPreferencesKey("supported_visual_model")
-        val SelectedVisualModelKey = stringPreferencesKey("selected_visual_model")
-        val TextEngineKey = stringPreferencesKey("selected_text_engine")
-        val Mode1EnabledKey = booleanPreferencesKey("mode_1_enabled")
-        val Mode2EnabledKey = booleanPreferencesKey("mode_2_enabled")
-        val Mode3EnabledKey = booleanPreferencesKey("mode_3_enabled")
-        val ModeConfigurationSavedKey = booleanPreferencesKey("mode_configuration_saved")
-        val SelectedPackagesKey = stringSetPreferencesKey("selected_monitored_packages")
-        val AppSelectionSavedKey = booleanPreferencesKey("app_selection_saved")
-        val SecuritySetupSavedKey = booleanPreferencesKey("security_setup_saved")
-    }
+        HaramVeilPreferenceKeys.securityAnswerHashKey(slot)
 }

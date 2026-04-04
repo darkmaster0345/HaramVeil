@@ -48,23 +48,37 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.haramveil.accessibility.isHaramVeilAccessibilityServiceEnabled
+import com.haramveil.accessibility.openHaramVeilAccessibilitySettings
+import com.haramveil.data.local.DefaultKeywordBlocklist
+import com.haramveil.data.local.ProtectionPreferencesRepository
 import com.haramveil.data.models.InstalledAppInfo
+import com.haramveil.data.models.ProtectionSettings
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
 import com.haramveil.ui.dashboard.DashboardRoute
@@ -74,6 +88,7 @@ import com.haramveil.ui.settings.SettingsRoute
 import com.haramveil.ui.settings.SettingsScreen
 import com.haramveil.ui.stats.StatsRoute
 import com.haramveil.ui.stats.StatsScreen
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -111,43 +126,61 @@ fun HaramVeilMainShell(
     installedApps: List<InstalledAppInfo>,
     selectedPackages: Set<String>,
 ) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
+    val protectionPreferencesRepository = remember(context) {
+        ProtectionPreferencesRepository(context.applicationContext)
+    }
+    val initialProtectionSettings = remember(
+        selectedTextEngine,
+        selectedVisualModel,
+        mode1Enabled,
+        mode2Enabled,
+        mode3Enabled,
+        selectedPackages,
+    ) {
+        ProtectionSettings(
+            monitoredPackages = selectedPackages,
+            keywordBlocklist = DefaultKeywordBlocklist.entries,
+            mode1Enabled = mode1Enabled,
+            mode2Enabled = mode2Enabled,
+            mode3Enabled = mode3Enabled,
+            selectedTextEngine = selectedTextEngine,
+            selectedVisualModel = selectedVisualModel,
+        )
+    }
+    val protectionSettings by protectionPreferencesRepository.settingsFlow.collectAsStateWithLifecycle(
+        initialValue = initialProtectionSettings,
+    )
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val initialAppConfigs = remember(installedApps, selectedPackages) {
+    val accessibilityServiceActive = rememberAccessibilityServiceStatus(
+        lifecycleOwner = lifecycleOwner,
+        context = context,
+    )
+    val monitoredPackages = protectionSettings.monitoredPackages.ifEmpty { selectedPackages }
+    val initialAppConfigs = remember(installedApps, monitoredPackages) {
         buildInitialAppConfigs(
             installedApps = installedApps,
-            selectedPackages = selectedPackages,
+            selectedPackages = monitoredPackages,
         )
     }
     var appConfigs by remember(initialAppConfigs) { mutableStateOf(initialAppConfigs) }
-    var protectionEnabled by remember { mutableStateOf(true) }
-    var activeTextEngine by remember(selectedTextEngine) { mutableStateOf(selectedTextEngine) }
-    var activeVisualModel by remember(selectedVisualModel, supports640Model) {
-        mutableStateOf(
-            when {
-                selectedVisualModel != null -> selectedVisualModel
-                supports640Model -> VisualModelOption.MODEL_640
-                else -> VisualModelOption.MODEL_320
-            },
-        )
+    var protectionEnabled by rememberSaveable { mutableStateOf(true) }
+    val activeTextEngine = protectionSettings.selectedTextEngine
+    val activeVisualModel = protectionSettings.selectedVisualModel ?: when {
+        selectedVisualModel != null -> selectedVisualModel
+        supports640Model -> VisualModelOption.MODEL_640
+        else -> VisualModelOption.MODEL_320
     }
     var globalLockdownDuration by remember { mutableStateOf(LockdownDurationOption.MINUTES_15) }
-    var keywordBlocklist by remember {
-        mutableStateOf(
-            listOf(
-                "nsfw",
-                "dating",
-                "OnlyFans",
-                "(?i)escort",
-                "(?i)cam\\s?girl",
-            ),
-        )
-    }
-    var mode1OverrideEnabled by remember(mode1Enabled) { mutableStateOf(mode1Enabled) }
-    var mode2OverrideEnabled by remember(mode2Enabled) { mutableStateOf(mode2Enabled) }
-    var mode3OverrideEnabled by remember(mode3Enabled) { mutableStateOf(mode3Enabled) }
-    var frameSkipIntervalMs by remember { mutableFloatStateOf(500f) }
+    val keywordBlocklist = protectionSettings.keywordBlocklist
+    val mode1OverrideEnabled = protectionSettings.mode1Enabled
+    val mode2OverrideEnabled = protectionSettings.mode2Enabled
+    val mode3OverrideEnabled = protectionSettings.mode3Enabled
+    val frameSkipIntervalMs = protectionSettings.frameSkipIntervalMs.toFloat()
     var topCapturePercent by remember { mutableFloatStateOf(30f) }
     var middleCapturePercent by remember { mutableFloatStateOf(40f) }
     var blockEvents by remember(initialAppConfigs) {
@@ -182,6 +215,16 @@ fun HaramVeilMainShell(
     val selectedBottomDestination = when (currentRoute) {
         SettingsRoute.advancedRoute -> MainDestination.Settings.route
         else -> currentRoute
+    }
+
+    LaunchedEffect(
+        accessibilityServiceActive,
+        protectionSettings.accessibilitySettingsPromptShown,
+    ) {
+        if (!accessibilityServiceActive && !protectionSettings.accessibilitySettingsPromptShown) {
+            openHaramVeilAccessibilitySettings(context)
+            protectionPreferencesRepository.markAccessibilitySettingsPromptShown()
+        }
     }
 
     HaramVeilScreenBackground {
@@ -267,9 +310,13 @@ fun HaramVeilMainShell(
                             activeModeCount = activeModeCount,
                             monitoredAppsCount = monitoredApps.size,
                             blocksToday = blockCounts.today,
+                            accessibilityServiceActive = accessibilityServiceActive,
                             recentEvents = blockEvents.take(3),
                             onProtectionEnabledChange = { shouldEnable ->
                                 protectionEnabled = shouldEnable
+                            },
+                            onOpenAccessibilitySettings = {
+                                openHaramVeilAccessibilitySettings(context)
                             },
                             onViewFullStats = {
                                 navController.navigate(StatsRoute.route) {
@@ -301,20 +348,39 @@ fun HaramVeilMainShell(
                                 navController.navigate(SettingsRoute.advancedRoute)
                             },
                             onEngineSelected = { engine ->
-                                activeTextEngine = engine
+                                scope.launch {
+                                    protectionPreferencesRepository.saveModeConfiguration(
+                                        textEngine = engine,
+                                        visualModel = activeVisualModel,
+                                        mode1Enabled = mode1OverrideEnabled,
+                                        mode2Enabled = mode2OverrideEnabled,
+                                        mode3Enabled = mode3OverrideEnabled,
+                                    )
+                                }
                             },
                             onMonitoredAppsUpdated = { selectedPackageNames ->
                                 appConfigs = appConfigs.map { config ->
                                     config.copy(isMonitored = config.app.packageName in selectedPackageNames)
                                 }
+                                scope.launch {
+                                    protectionPreferencesRepository.saveMonitoredPackages(selectedPackageNames)
+                                }
                             },
                             onKeywordAdded = { keyword ->
                                 if (keyword.isNotBlank() && keyword !in keywordBlocklist) {
-                                    keywordBlocklist = keywordBlocklist + keyword
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveKeywordBlocklist(
+                                            keywordBlocklist + keyword,
+                                        )
+                                    }
                                 }
                             },
                             onKeywordRemoved = { keyword ->
-                                keywordBlocklist = keywordBlocklist - keyword
+                                scope.launch {
+                                    protectionPreferencesRepository.saveKeywordBlocklist(
+                                        keywordBlocklist - keyword,
+                                    )
+                                }
                             },
                             onLockdownDurationSelected = { duration ->
                                 globalLockdownDuration = duration
@@ -333,11 +399,55 @@ fun HaramVeilMainShell(
                             topCapturePercent = topCapturePercent.toInt(),
                             middleCapturePercent = middleCapturePercent.toInt(),
                             onBack = { navController.popBackStack() },
-                            onMode1Changed = { mode1OverrideEnabled = it },
-                            onMode2Changed = { mode2OverrideEnabled = it },
-                            onMode3Changed = { mode3OverrideEnabled = it },
-                            onVisualModelSelected = { activeVisualModel = it },
-                            onFrameSkipIntervalChanged = { frameSkipIntervalMs = it.toFloat() },
+                            onMode1Changed = { enabled ->
+                                scope.launch {
+                                    protectionPreferencesRepository.saveModeConfiguration(
+                                        textEngine = activeTextEngine,
+                                        visualModel = activeVisualModel,
+                                        mode1Enabled = enabled,
+                                        mode2Enabled = mode2OverrideEnabled,
+                                        mode3Enabled = mode3OverrideEnabled,
+                                    )
+                                }
+                            },
+                            onMode2Changed = { enabled ->
+                                scope.launch {
+                                    protectionPreferencesRepository.saveModeConfiguration(
+                                        textEngine = activeTextEngine,
+                                        visualModel = activeVisualModel,
+                                        mode1Enabled = mode1OverrideEnabled,
+                                        mode2Enabled = enabled,
+                                        mode3Enabled = mode3OverrideEnabled,
+                                    )
+                                }
+                            },
+                            onMode3Changed = { enabled ->
+                                scope.launch {
+                                    protectionPreferencesRepository.saveModeConfiguration(
+                                        textEngine = activeTextEngine,
+                                        visualModel = activeVisualModel,
+                                        mode1Enabled = mode1OverrideEnabled,
+                                        mode2Enabled = mode2OverrideEnabled,
+                                        mode3Enabled = enabled,
+                                    )
+                                }
+                            },
+                            onVisualModelSelected = { model ->
+                                scope.launch {
+                                    protectionPreferencesRepository.saveModeConfiguration(
+                                        textEngine = activeTextEngine,
+                                        visualModel = model,
+                                        mode1Enabled = mode1OverrideEnabled,
+                                        mode2Enabled = mode2OverrideEnabled,
+                                        mode3Enabled = mode3OverrideEnabled,
+                                    )
+                                }
+                            },
+                            onFrameSkipIntervalChanged = { intervalMs ->
+                                scope.launch {
+                                    protectionPreferencesRepository.saveFrameSkipIntervalMs(intervalMs.toLong())
+                                }
+                            },
                             onTopCapturePercentChanged = { topCapturePercent = it.toFloat() },
                             onMiddleCapturePercentChanged = { middleCapturePercent = it.toFloat() },
                             onModeOverrideChanged = { packageName, option ->
@@ -405,6 +515,30 @@ fun HaramVeilMainShell(
             }
         }
     }
+}
+
+@Composable
+private fun rememberAccessibilityServiceStatus(
+    lifecycleOwner: androidx.lifecycle.LifecycleOwner,
+    context: android.content.Context,
+): Boolean {
+    var isActive by remember {
+        mutableStateOf(isHaramVeilAccessibilityServiceEnabled(context))
+    }
+
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                isActive = isHaramVeilAccessibilityServiceEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    return isActive
 }
 
 private data class BlockCountSummary(

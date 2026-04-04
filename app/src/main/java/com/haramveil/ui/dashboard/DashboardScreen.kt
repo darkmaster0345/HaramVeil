@@ -63,8 +63,10 @@ fun DashboardScreen(
     activeModeCount: Int,
     monitoredAppsCount: Int,
     blocksToday: Int,
+    accessibilityServiceActive: Boolean,
     recentEvents: List<BlockEventUiModel>,
     onProtectionEnabledChange: (Boolean) -> Unit,
+    onOpenAccessibilitySettings: () -> Unit,
     onViewFullStats: () -> Unit,
 ) {
     var showPinDialog by remember { mutableStateOf(false) }
@@ -131,6 +133,23 @@ fun DashboardScreen(
                         backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
                         contentColor = MaterialTheme.colorScheme.secondary,
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = "Accessibility Service: ${if (accessibilityServiceActive) "Active" else "Inactive"}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        if (!accessibilityServiceActive) {
+                            TextButton(onClick = onOpenAccessibilitySettings) {
+                                Text("Enable")
+                            }
+                        }
+                    }
                 }
             }
             item {

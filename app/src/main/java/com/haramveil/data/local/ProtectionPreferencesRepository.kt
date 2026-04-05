@@ -64,6 +64,9 @@ class ProtectionPreferencesRepository(
                     ?: HaramVeilPreferenceKeys.DefaultMode3InferenceIntervalMs,
                 lockdownDurationMs = preferences[HaramVeilPreferenceKeys.LockdownDurationMs]
                     ?: HaramVeilPreferenceKeys.DefaultLockdownDurationMs,
+                statsRetentionDays = (preferences[HaramVeilPreferenceKeys.StatsRetentionDays]
+                    ?: HaramVeilPreferenceKeys.DefaultStatsRetentionDays.toLong())
+                    .toInt(),
                 topCapturePercent = (preferences[HaramVeilPreferenceKeys.TopCapturePercent]
                     ?: HaramVeilPreferenceKeys.DefaultTopCapturePercent.toLong())
                     .toInt(),
@@ -149,6 +152,13 @@ class ProtectionPreferencesRepository(
         context.haramVeilPreferencesDataStore.edit { preferences ->
             preferences[HaramVeilPreferenceKeys.LockdownDurationMs] =
                 durationMs.coerceIn(minimumValue = 5 * 60 * 1_000L, maximumValue = 24 * 60 * 60 * 1_000L)
+        }
+    }
+
+    suspend fun saveStatsRetentionDays(retentionDays: Int) {
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.StatsRetentionDays] =
+                retentionDays.coerceIn(minimumValue = 30, maximumValue = 365).toLong()
         }
     }
 

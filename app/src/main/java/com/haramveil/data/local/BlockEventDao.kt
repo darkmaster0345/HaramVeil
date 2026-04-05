@@ -16,11 +16,26 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-plugins {
-    id("com.android.application") version "9.1.0" apply false
-    kotlin("plugin.compose") version "2.3.10" apply false
-}
+package com.haramveil.data.local
 
-tasks.register<Delete>("clean") {
-    delete(layout.buildDirectory)
+import kotlinx.coroutines.flow.Flow
+
+interface BlockEventDao {
+    suspend fun insertEvent(event: BlockEvent)
+
+    fun getAll(): Flow<List<BlockEvent>>
+
+    fun getToday(): Flow<List<BlockEvent>>
+
+    fun getThisWeek(): Flow<List<BlockEvent>>
+
+    fun getMostBlockedApp(): Flow<String?>
+
+    fun getMostBlockedAppRecord(): Flow<MostBlockedAppRecord?>
+
+    suspend fun deleteAll()
+
+    fun getCountByMode(mode: Int): Flow<Int>
+
+    suspend fun deleteOlderThan(cutoffTimestampMs: Long): Int
 }

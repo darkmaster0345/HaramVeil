@@ -80,6 +80,7 @@ fun SettingsScreen(
     selectedEngine: TextRecognitionEngine,
     globalLockdownDuration: LockdownDurationOption,
     keywordBlocklist: List<String>,
+    statsRetentionDays: Int,
     deviceAdminEnabled: Boolean,
     onOpenAdvancedSettings: () -> Unit,
     onOpenChangePin: () -> Unit,
@@ -88,6 +89,7 @@ fun SettingsScreen(
     onKeywordAdded: (String) -> Unit,
     onKeywordRemoved: (String) -> Unit,
     onLockdownDurationSelected: (LockdownDurationOption) -> Unit,
+    onStatsRetentionSelected: (Int) -> Unit,
 ) {
     val context = LocalContext.current
     val versionLabel = remember(context) {
@@ -143,7 +145,7 @@ fun SettingsScreen(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "Words and regex patterns stay local. Later phases will encrypt and enforce them.",
+                        text = "Words and regex patterns stay local and feed directly into the active protection pipeline.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -221,6 +223,34 @@ fun SettingsScreen(
                                 selected = globalLockdownDuration == option,
                                 onClick = { onLockdownDurationSelected(option) },
                                 label = { Text(option.label) },
+                            )
+                        }
+                    }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Stats Retention",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Encrypted block history older than the selected age is removed automatically once per day.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        listOf(30, 60, 90, 180).forEach { retentionDays ->
+                            FilterChip(
+                                selected = statsRetentionDays == retentionDays,
+                                onClick = { onStatsRetentionSelected(retentionDays) },
+                                label = { Text("$retentionDays days") },
                             )
                         }
                     }

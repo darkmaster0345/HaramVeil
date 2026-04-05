@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.haramveil.ui.BlockDetectionMode
 import com.haramveil.ui.BlockEventUiModel
@@ -55,6 +56,7 @@ import com.haramveil.ui.InstalledAppIcon
 import com.haramveil.ui.ModeBadge
 import com.haramveil.ui.MostBlockedAppUiModel
 import com.haramveil.ui.SectionLabel
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -85,7 +87,7 @@ fun StatsScreen(
         item {
             HaramVeilWordmarkHeader(
                 title = "Activity Log",
-                subtitle = "A local-only preview of recent interventions, filters, and high-level block totals.",
+                subtitle = "Encrypted on-device history of recent interventions, filter hits, and visual detections.",
             )
         }
         item {
@@ -137,7 +139,7 @@ fun StatsScreen(
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                text = "${mostBlockedApp.count} blocks in this local preview",
+                                text = "${mostBlockedApp.count} total blocks recorded locally",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -264,7 +266,18 @@ private fun StatsEventRow(
     event: BlockEventUiModel,
 ) {
     val timestampFormatter = remember {
-        DateTimeFormatter.ofPattern("MMM d, h:mm a", Locale.getDefault())
+        DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+    }
+    val weekdayFormatter = remember {
+        DateTimeFormatter.ofPattern("EEE HH:mm", Locale.getDefault())
+    }
+    val formattedTimestamp = remember(event.timestamp) {
+        val eventDate = event.timestamp.toLocalDate()
+        if (eventDate == LocalDate.now()) {
+            "Today ${event.timestamp.format(timestampFormatter)}"
+        } else {
+            event.timestamp.format(weekdayFormatter)
+        }
     }
 
     HaramVeilSectionCard(
@@ -287,12 +300,29 @@ private fun StatsEventRow(
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = event.timestamp.format(timestampFormatter),
+                    text = formattedTimestamp,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = formatDetectionDetail(event.detectionDetail),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             ModeBadge(mode = event.mode)
         }
+    }
+}
+
+private fun formatDetectionDetail(
+    detail: String,
+): String {
+    return when (detail) {
+        "visual_content" -> "Visual content detected"
+        "lockdown_retrigger" -> "Lockdown timer was reset after the app reopened"
+        else -> "Matched keyword: $detail"
     }
 }

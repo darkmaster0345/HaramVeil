@@ -3,6 +3,7 @@
 .gradle-user/
 .android-user/
 .kotlin/
+.temp/
 .vscode/
 
 # Android local machine configuration

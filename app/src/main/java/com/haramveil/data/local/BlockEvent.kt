@@ -16,11 +16,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-plugins {
-    id("com.android.application") version "9.1.0" apply false
-    kotlin("plugin.compose") version "2.3.10" apply false
-}
+package com.haramveil.data.local
 
-tasks.register<Delete>("clean") {
-    delete(layout.buildDirectory)
-}
+data class BlockEvent(
+    val id: Long = 0,
+    val packageName: String,
+    val appName: String,
+    val triggerMode: Int,
+    val detectionDetail: String,
+    val timestamp: Long,
+    val lockdownDurationMs: Long,
+)
+
+data class MostBlockedAppRecord(
+    val packageName: String,
+    val appName: String,
+    val blockCount: Int,
+)

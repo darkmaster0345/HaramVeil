@@ -24,6 +24,7 @@ import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityEvent
 import com.haramveil.data.local.ProtectionPreferencesRepository
+import com.haramveil.data.local.StatsRepository
 import com.haramveil.data.models.ProtectionSettings
 import com.haramveil.detection.mode1.RiskLevel
 import com.haramveil.detection.mode2.Mode2Processor
@@ -51,6 +52,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
     private val uiTreeScanner = UITreeScanner()
     private lateinit var protectionPreferencesRepository: ProtectionPreferencesRepository
     private lateinit var appLockdownManager: AppLockdownManager
+    private lateinit var statsRepository: StatsRepository
     private val protectionSettingsState = MutableStateFlow(ProtectionSettings())
     private var collectorsStarted = false
     private lateinit var throttleManager: ThrottleManager
@@ -61,6 +63,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
         super.onCreate()
         protectionPreferencesRepository = ProtectionPreferencesRepository(applicationContext)
         appLockdownManager = AppLockdownManager(applicationContext)
+        statsRepository = StatsRepository.getInstance(applicationContext)
         throttleManager = ThrottleManager(
             scope = serviceScope,
             dispatcherProvider = dispatcherProvider,
@@ -129,6 +132,14 @@ class HaramVeilAccessibilityService : AccessibilityService() {
 
             if (appLockdownManager.isLocked(packageName)) {
                 appLockdownManager.lockApp(packageName, currentSettings.lockdownDurationMs)
+                serviceScope.launch(dispatcherProvider.io) {
+                    statsRepository.logBlock(
+                        packageName = packageName,
+                        mode = 1,
+                        detail = "lockdown_retrigger",
+                        lockdownMs = currentSettings.lockdownDurationMs,
+                    )
+                }
                 DetectionBus.publishVeilRequested(
                     packageName = packageName,
                     triggerMode = DetectionTriggerMode.LOCKDOWN,
@@ -208,6 +219,15 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             val wakeMode2 = currentSettings.mode2Enabled
             val wakeMode3 = scanResult.riskLevel == RiskLevel.HIGH && currentSettings.mode3Enabled
             val matchDetails = buildMatchDetails(scanResult)
+
+            scanResult.matchedKeyword?.let { matchedKeyword ->
+                statsRepository.logBlock(
+                    packageName = scanResult.packageName,
+                    mode = 1,
+                    detail = matchedKeyword,
+                    lockdownMs = currentSettings.lockdownDurationMs,
+                )
+            }
 
             DetectionBus.publishMode1Triggered(
                 Mode1WakeRequest(

@@ -28,6 +28,7 @@ import android.os.IBinder
 import android.os.UserManager
 import androidx.work.WorkManager
 import com.haramveil.accessibility.isHaramVeilAccessibilityServiceEnabled
+import com.haramveil.data.local.StatsCleanupWorker
 import com.haramveil.overlay.VeilOverlayController
 import com.haramveil.utils.RootAccessHelper
 import kotlinx.coroutines.CoroutineScope
@@ -115,6 +116,7 @@ class HaramVeilForegroundService : Service() {
 
         VeilOverlayController.start(applicationContext)
         ProtectionHealthWorker.enqueue(applicationContext)
+        StatsCleanupWorker.enqueue(applicationContext)
 
         val rootModeEnabled = RootAccessHelper.isRootAvailable()
         if (rootModeEnabled) {
@@ -139,6 +141,8 @@ class HaramVeilForegroundService : Service() {
             ServiceHealthAlarmReceiver.cancel(applicationContext)
             WorkManager.getInstance(applicationContext)
                 .cancelUniqueWork(ProtectionHealthWorker.UniqueWorkName)
+            WorkManager.getInstance(applicationContext)
+                .cancelUniqueWork(StatsCleanupWorker.UniqueWorkName)
         }
         applicationContext.stopService(Intent(applicationContext, com.haramveil.overlay.VeilOverlayService::class.java))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

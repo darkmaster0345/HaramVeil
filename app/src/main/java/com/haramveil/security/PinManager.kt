@@ -22,6 +22,7 @@ import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import at.favre.lib.crypto.bcrypt.BCrypt
+import com.haramveil.data.local.HaramVeilDatabase
 
 class PinManager(
     context: Context,
@@ -42,7 +43,13 @@ class PinManager(
     }
 
     fun storePIN(pin: String) {
+        val previousHash = storedPinHashOrNull()
         val bcryptHash = BCrypt.withDefaults().hashToString(BcryptCost, pin.toCharArray())
+        HaramVeilDatabase.rekeyIfNeeded(
+            context = applicationContext,
+            oldPinHash = previousHash,
+            newPinHash = bcryptHash,
+        )
         encryptedPreferences.edit()
             .putString(PinHashKey, bcryptHash)
             .putInt(PinFailedAttemptsKey, 0)
@@ -63,6 +70,8 @@ class PinManager(
     }
 
     fun isSet(): Boolean = encryptedPreferences.contains(PinHashKey)
+
+    fun storedPinHashOrNull(): String? = encryptedPreferences.getString(PinHashKey, null)
 
     fun onWrongAttempt() {
         clearExpiredLockoutIfNeeded()

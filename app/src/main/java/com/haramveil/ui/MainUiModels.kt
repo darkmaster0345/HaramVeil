@@ -41,6 +41,17 @@ enum class BlockDetectionMode(
         label = "System Alert",
         shortLabel = "SYS",
     ),
+    ;
+
+    companion object {
+        fun fromTriggerMode(triggerMode: Int): BlockDetectionMode =
+            when (triggerMode) {
+                1 -> MODE_1
+                2 -> MODE_2
+                3 -> MODE_3
+                else -> SYSTEM_ALERT
+            }
+    }
 }
 
 enum class ModeOverrideOption(
@@ -113,6 +124,7 @@ data class BlockEventUiModel(
     val app: InstalledAppInfo,
     val mode: BlockDetectionMode,
     val timestamp: LocalDateTime,
+    val detectionDetail: String,
 )
 
 data class MostBlockedAppUiModel(

@@ -316,7 +316,7 @@ fun DashboardScreen(
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                text = "The veil and lockdown timer are now active. Stats are still preview data until the logging phase is wired.",
+                                text = "The veil, lockdown timer, and encrypted local activity log are all active on this device.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

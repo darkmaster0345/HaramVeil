@@ -31,6 +31,7 @@ internal object HaramVeilPreferenceKeys {
     const val DefaultLockdownDurationMs = 15 * 60 * 1_000L
     const val DefaultTopCapturePercent = 30
     const val DefaultMiddleCapturePercent = 40
+    const val DefaultStatsRetentionDays = 90
 
     val OnboardingComplete = booleanPreferencesKey("onboarding_complete")
     val ProtectionEnabled = booleanPreferencesKey("protection_enabled")
@@ -52,6 +53,7 @@ internal object HaramVeilPreferenceKeys {
     val FrameSkipIntervalMs = longPreferencesKey("frame_skip_interval_ms")
     val Mode3InferenceIntervalMs = longPreferencesKey("mode3_inference_interval_ms")
     val LockdownDurationMs = longPreferencesKey("lockdown_duration_ms")
+    val StatsRetentionDays = longPreferencesKey("stats_retention_days")
     val TopCapturePercent = longPreferencesKey("top_capture_percent")
     val MiddleCapturePercent = longPreferencesKey("middle_capture_percent")
     val AccessibilitySettingsPromptShown = booleanPreferencesKey("accessibility_prompt_shown")

@@ -25,6 +25,7 @@ import android.os.Process
 import android.os.SystemClock
 import android.util.Log
 import com.haramveil.data.local.ProtectionPreferencesRepository
+import com.haramveil.data.local.StatsRepository
 import com.haramveil.data.models.ProtectionSettings
 import com.haramveil.utils.DetectionBus
 import com.haramveil.utils.DetectionEvent
@@ -51,6 +52,7 @@ class Mode3Processor(
 ) {
     private val processorScope = CoroutineScope(SupervisorJob() + dispatcherProvider.default)
     private val screenCaptureManager = ScreenCaptureManager(dispatcherProvider)
+    private val statsRepository = StatsRepository.getInstance(context)
     private val modelSelector = ModelSelector(
         context = context,
         protectionPreferencesRepository = protectionPreferencesRepository,
@@ -159,6 +161,12 @@ class Mode3Processor(
                 if (detectionResult.isUnsafe) {
                     val matchDetails =
                         "$summaryDetails Unsafe class ${detectionResult.className} scored ${"%.2f".format(detectionResult.confidence)}."
+                    statsRepository.logBlock(
+                        packageName = trigger.scanResult.packageName,
+                        mode = 3,
+                        detail = "visual_content",
+                        lockdownMs = settings.lockdownDurationMs,
+                    )
                     DetectionBus.publishMode3Triggered(
                         packageName = trigger.scanResult.packageName,
                         matchDetails = matchDetails,

@@ -23,6 +23,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.Process
 import com.haramveil.data.local.ProtectionPreferencesRepository
+import com.haramveil.data.local.StatsRepository
 import com.haramveil.data.models.ProtectionSettings
 import com.haramveil.utils.DetectionBus
 import com.haramveil.utils.DetectionEvent
@@ -48,6 +49,7 @@ class Mode2Processor(
 ) {
     private val processorScope = CoroutineScope(SupervisorJob() + dispatcherProvider.default)
     private val screenCaptureManager = ScreenCaptureManager(dispatcherProvider)
+    private val statsRepository = StatsRepository.getInstance(context)
     private val ocrEngineSelector = OcrEngineSelector(
         context = context,
         protectionPreferencesRepository = protectionPreferencesRepository,
@@ -115,6 +117,12 @@ class Mode2Processor(
                 if (matchedKeyword != null) {
                     val matchDetails =
                         "OCR matched keyword \"$matchedKeyword\" using ${ocrEngine.label()} in ${ocrResult.processingTimeMs}ms."
+                    statsRepository.logBlock(
+                        packageName = trigger.scanResult.packageName,
+                        mode = 2,
+                        detail = matchedKeyword,
+                        lockdownMs = settings.lockdownDurationMs,
+                    )
                     DetectionBus.publishMode2Triggered(
                         packageName = trigger.scanResult.packageName,
                         matchDetails = matchDetails,

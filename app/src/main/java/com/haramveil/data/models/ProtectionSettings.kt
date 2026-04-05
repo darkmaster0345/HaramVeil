@@ -30,6 +30,7 @@ data class ProtectionSettings(
     val frameSkipIntervalMs: Long = 500L,
     val mode3InferenceIntervalMs: Long = 1_000L,
     val lockdownDurationMs: Long = 15 * 60 * 1_000L,
+    val statsRetentionDays: Int = 90,
     val topCapturePercent: Int = 30,
     val middleCapturePercent: Int = 40,
     val accessibilitySettingsPromptShown: Boolean = false,

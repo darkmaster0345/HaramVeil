@@ -20,7 +20,6 @@ package com.haramveil.ui
 
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -60,17 +59,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.foundation.text.KeyboardOptions
+import coil.compose.AsyncImage
 import com.haramveil.data.models.InstalledAppInfo
 
 @Composable
@@ -348,13 +345,17 @@ fun InstalledAppIcon(
     }
 
     if (iconDrawable != null) {
-        Image(
-            bitmap = iconDrawable!!.toBitmap(72, 72).asImageBitmap(),
+        AsyncImage(
+            model = iconDrawable,
             contentDescription = app.label,
-            contentScale = ContentScale.Crop,
             modifier = modifier
                 .size(size)
-                .clip(RoundedCornerShape(14.dp)),
+                .clip(RoundedCornerShape(14.dp))
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f),
+                    shape = RoundedCornerShape(14.dp),
+                ),
         )
     } else {
         Box(

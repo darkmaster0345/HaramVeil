@@ -18,7 +18,7 @@
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.compose") version "2.3.10"
 }
 
 android {
@@ -101,10 +101,12 @@ dependencies {
     implementation("com.google.android.gms:play-services-base:18.10.0")
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
     implementation("androidx.datastore:datastore-preferences:1.2.1")
+    implementation("androidx.sqlite:sqlite:2.5.2")
     implementation("androidx.security:security-crypto:1.1.0")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("at.favre.lib:bcrypt:0.10.2")
+    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-inline:5.2.0")

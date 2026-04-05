@@ -45,6 +45,8 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,6 +79,9 @@ import com.haramveil.accessibility.isHaramVeilAccessibilityServiceEnabled
 import com.haramveil.accessibility.openHaramVeilAccessibilitySettings
 import com.haramveil.data.local.DefaultKeywordBlocklist
 import com.haramveil.data.local.ProtectionPreferencesRepository
+import com.haramveil.data.local.StatsRepository
+import com.haramveil.data.local.BlockEvent
+import com.haramveil.data.local.MostBlockedAppRecord
 import com.haramveil.data.models.InstalledAppInfo
 import com.haramveil.data.models.ProtectionSettings
 import com.haramveil.data.models.TextRecognitionEngine
@@ -89,7 +94,6 @@ import com.haramveil.security.PinManager
 import com.haramveil.security.SecurityQuestionsManager
 import com.haramveil.service.HaramVeilProtectionController
 import com.haramveil.service.ProtectionBootstrapStore
-import com.haramveil.service.TamperEventSnapshot
 import com.haramveil.ui.dashboard.DashboardRoute
 import com.haramveil.ui.dashboard.DashboardScreen
 import com.haramveil.ui.settings.AdvancedSettingsScreen
@@ -105,7 +109,6 @@ import com.haramveil.utils.RootAccessHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -152,6 +155,9 @@ fun HaramVeilMainShell(
     val scope = rememberCoroutineScope()
     val protectionPreferencesRepository = remember(context) {
         ProtectionPreferencesRepository(context.applicationContext)
+    }
+    val statsRepository = remember(context) {
+        StatsRepository.getInstance(context.applicationContext)
     }
     val appLockdownManager = remember(context) {
         AppLockdownManager(context.applicationContext)
@@ -219,8 +225,8 @@ fun HaramVeilMainShell(
     var pendingSensitiveAction by remember { mutableStateOf<SensitiveAction?>(null) }
     var foregroundServiceActive by remember { mutableStateOf(bootstrapStore.isServiceAlive()) }
     var deviceAdminEnabled by remember { mutableStateOf(DeviceAdminController.isEnabled(context.applicationContext)) }
-    var latestTamperEvent by remember { mutableStateOf(bootstrapStore.lastTamperEvent()) }
     var showBatteryOptimizationDialog by rememberSaveable { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
     val activeTextEngine = protectionSettings.selectedTextEngine
     val activeVisualModel = resolvedModelSelectionState?.modelConfig?.visualModel ?: protectionSettings.selectedVisualModel ?: when {
         selectedVisualModel != null -> selectedVisualModel
@@ -237,21 +243,9 @@ fun HaramVeilMainShell(
     val mode3OverrideEnabled = protectionSettings.mode3Enabled
     val frameSkipIntervalMs = protectionSettings.frameSkipIntervalMs.toFloat()
     val mode3InferenceIntervalMs = protectionSettings.mode3InferenceIntervalMs.toFloat()
+    val statsRetentionDays = protectionSettings.statsRetentionDays
     val topCapturePercent = protectionSettings.topCapturePercent.toFloat()
     val middleCapturePercent = protectionSettings.middleCapturePercent.toFloat()
-    var baseBlockEvents by remember(initialAppConfigs) {
-        mutableStateOf(
-            buildSampleBlockEvents(
-                monitoredApps = initialAppConfigs.filter { it.isMonitored }.map { it.app },
-            ),
-        )
-    }
-    val blockEvents = remember(baseBlockEvents, latestTamperEvent) {
-        mergeBlockEvents(
-            contentEvents = baseBlockEvents,
-            tamperEvent = latestTamperEvent,
-        )
-    }
     var activeLockdowns by remember { mutableStateOf(emptyList<ActiveLockdownUiModel>()) }
 
     val monitoredApps = appConfigs.filter { it.isMonitored }
@@ -265,6 +259,19 @@ fun HaramVeilMainShell(
             }
         }
     }
+    val storedBlockEvents by statsRepository.allEvents.collectAsStateWithLifecycle(initialValue = emptyList())
+    val todayCount by statsRepository.todayCount.collectAsStateWithLifecycle(initialValue = 0)
+    val thisWeekCount by statsRepository.thisWeekCount.collectAsStateWithLifecycle(initialValue = 0)
+    val allTimeCount by statsRepository.allTimeCount.collectAsStateWithLifecycle(initialValue = 0)
+    val mostBlockedAppRecord by statsRepository.mostBlockedAppRecord.collectAsStateWithLifecycle(initialValue = null)
+    val blockEvents = remember(storedBlockEvents, knownAppsByPackage) {
+        storedBlockEvents.map { event ->
+            event.toUiModel(knownAppsByPackage)
+        }
+    }
+    val mostBlockedApp = remember(mostBlockedAppRecord, knownAppsByPackage) {
+        mostBlockedAppRecord?.toUiModel(knownAppsByPackage)
+    }
     val activeModeCount = listOf(
         mode1OverrideEnabled,
         mode2OverrideEnabled,
@@ -275,8 +282,6 @@ fun HaramVeilMainShell(
         mode2Enabled = mode2OverrideEnabled,
         mode3Enabled = mode3OverrideEnabled,
     )
-    val blockCounts = remember(blockEvents) { deriveBlockCounts(blockEvents) }
-    val mostBlockedApp = remember(blockEvents) { deriveMostBlockedApp(blockEvents) }
     val activeLockdownMessage = remember(activeLockdowns) {
         activeLockdowns.firstOrNull()?.let { lockdown ->
             "${lockdown.app.label} locked for ${lockdown.remainingLabel} remaining"
@@ -337,7 +342,6 @@ fun HaramVeilMainShell(
             }
             foregroundServiceActive = bootstrapStore.isServiceAlive()
             deviceAdminEnabled = DeviceAdminController.isEnabled(context.applicationContext)
-            latestTamperEvent = bootstrapStore.lastTamperEvent()
             delay(1_000L)
         }
     }
@@ -346,6 +350,9 @@ fun HaramVeilMainShell(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            snackbarHost = {
+                SnackbarHost(hostState = snackbarHostState)
+            },
             bottomBar = {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
@@ -424,7 +431,7 @@ fun HaramVeilMainShell(
                             activeModeSummary = activeModeSummary,
                             activeModeCount = activeModeCount,
                             monitoredAppsCount = monitoredApps.size,
-                            blocksToday = blockCounts.today,
+                            blocksToday = todayCount,
                             accessibilityServiceActive = accessibilityServiceActive,
                             deviceAdminEnabled = deviceAdminEnabled,
                             foregroundServiceActive = foregroundServiceActive,
@@ -462,9 +469,9 @@ fun HaramVeilMainShell(
                     composable(StatsRoute.route) {
                         StatsScreen(
                             events = blockEvents,
-                            todayCount = blockCounts.today,
-                            thisWeekCount = blockCounts.thisWeek,
-                            allTimeCount = blockCounts.allTime,
+                            todayCount = todayCount,
+                            thisWeekCount = thisWeekCount,
+                            allTimeCount = allTimeCount,
                             mostBlockedApp = mostBlockedApp,
                             onRequestClearHistory = {
                                 pendingSensitiveAction = SensitiveAction.CLEAR_HISTORY
@@ -487,6 +494,7 @@ fun HaramVeilMainShell(
                                 selectedEngine = activeTextEngine,
                                 globalLockdownDuration = globalLockdownDuration,
                                 keywordBlocklist = keywordBlocklist,
+                                statsRetentionDays = statsRetentionDays,
                                 deviceAdminEnabled = deviceAdminEnabled,
                                 onOpenAdvancedSettings = {
                                     navController.navigate(SettingsRoute.advancedRoute)
@@ -536,6 +544,11 @@ fun HaramVeilMainShell(
                                             else -> duration.toDurationMs(protectionSettings.lockdownDurationMs)
                                         }
                                         protectionPreferencesRepository.saveLockdownDurationMs(persistedDurationMs)
+                                    }
+                                },
+                                onStatsRetentionSelected = { retentionDays ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveStatsRetentionDays(retentionDays)
                                     }
                                 },
                             )
@@ -744,9 +757,10 @@ fun HaramVeilMainShell(
                                 }
                             }
                             SensitiveAction.CLEAR_HISTORY -> {
-                                baseBlockEvents = emptyList()
-                                bootstrapStore.clearTamperEvent()
-                                latestTamperEvent = null
+                                scope.launch {
+                                    statsRepository.clearHistory()
+                                    snackbarHostState.showSnackbar("History cleared")
+                                }
                             }
                             null -> Unit
                         }
@@ -830,12 +844,6 @@ private fun rememberAccessibilityServiceStatus(
     return isActive
 }
 
-private data class BlockCountSummary(
-    val today: Int,
-    val thisWeek: Int,
-    val allTime: Int,
-)
-
 private fun buildInitialAppConfigs(
     installedApps: List<InstalledAppInfo>,
     selectedPackages: Set<String>,
@@ -893,60 +901,6 @@ private fun buildInitialAppConfigs(
         }
 }
 
-private fun buildSampleBlockEvents(
-    monitoredApps: List<InstalledAppInfo>,
-): List<BlockEventUiModel> {
-    val appPool = if (monitoredApps.isEmpty()) {
-        listOf(
-            InstalledAppInfo("com.instagram.android", "Instagram", true),
-            InstalledAppInfo("com.android.chrome", "Chrome", true),
-            InstalledAppInfo("com.google.android.youtube", "YouTube", true),
-        )
-    } else {
-        monitoredApps.take(4)
-    }
-    val safePool = generateSequence { appPool }.flatten().take(4).toList()
-    val now = LocalDateTime.now()
-    return listOf(
-        BlockEventUiModel(
-            id = "event_1",
-            app = safePool[0],
-            mode = BlockDetectionMode.MODE_2,
-            timestamp = now.minusMinutes(11),
-        ),
-        BlockEventUiModel(
-            id = "event_2",
-            app = safePool[1],
-            mode = BlockDetectionMode.MODE_1,
-            timestamp = now.minusMinutes(42),
-        ),
-        BlockEventUiModel(
-            id = "event_3",
-            app = safePool[2],
-            mode = BlockDetectionMode.MODE_3,
-            timestamp = now.minusHours(2),
-        ),
-        BlockEventUiModel(
-            id = "event_4",
-            app = safePool[0],
-            mode = BlockDetectionMode.MODE_2,
-            timestamp = now.minusDays(1).minusMinutes(28),
-        ),
-        BlockEventUiModel(
-            id = "event_5",
-            app = safePool[1],
-            mode = BlockDetectionMode.MODE_1,
-            timestamp = now.minusDays(3).minusHours(4),
-        ),
-        BlockEventUiModel(
-            id = "event_6",
-            app = safePool[3],
-            mode = BlockDetectionMode.MODE_3,
-            timestamp = now.minusDays(6).minusHours(1),
-        ),
-    ).sortedByDescending { it.timestamp }
-}
-
 private fun buildActiveModeSummary(
     mode1Enabled: Boolean,
     mode2Enabled: Boolean,
@@ -965,40 +919,11 @@ private fun buildActiveModeSummary(
     }
 }
 
-private fun deriveBlockCounts(
-    events: List<BlockEventUiModel>,
-): BlockCountSummary {
-    val contentEvents = events.filter { event -> event.mode != BlockDetectionMode.SYSTEM_ALERT }
-    val today = LocalDate.now()
-    val weekStart = today.minusDays(6)
-    return BlockCountSummary(
-        today = contentEvents.count { it.timestamp.toLocalDate() == today },
-        thisWeek = contentEvents.count { !it.timestamp.toLocalDate().isBefore(weekStart) },
-        allTime = contentEvents.size,
-    )
-}
-
-private fun deriveMostBlockedApp(
-    events: List<BlockEventUiModel>,
-): MostBlockedAppUiModel? {
-    return events
-        .filter { event -> event.mode != BlockDetectionMode.SYSTEM_ALERT }
-        .groupingBy { it.app.packageName }
-        .eachCount()
-        .maxByOrNull { it.value }
-        ?.let { entry ->
-            val representativeApp = events.first { it.app.packageName == entry.key }.app
-            MostBlockedAppUiModel(
-                app = representativeApp,
-                count = entry.value,
-            )
-        }
-}
-
 private fun fallbackInstalledApp(
     packageName: String,
+    fallbackLabel: String? = null,
 ): InstalledAppInfo {
-    val fallbackLabel = packageName.substringAfterLast('.')
+    val resolvedLabel = fallbackLabel?.takeIf(String::isNotBlank) ?: packageName.substringAfterLast('.')
         .replace('_', ' ')
         .replace('-', ' ')
         .replaceFirstChar { character ->
@@ -1006,34 +931,9 @@ private fun fallbackInstalledApp(
         }
     return InstalledAppInfo(
         packageName = packageName,
-        label = fallbackLabel,
+        label = resolvedLabel,
         isHighRisk = false,
     )
-}
-
-private fun mergeBlockEvents(
-    contentEvents: List<BlockEventUiModel>,
-    tamperEvent: TamperEventSnapshot?,
-): List<BlockEventUiModel> {
-    val tamperEventModel = tamperEvent?.let { snapshot ->
-        BlockEventUiModel(
-            id = "tamper_${snapshot.eventType}_${snapshot.timestampMs}",
-            app = InstalledAppInfo(
-                packageName = "com.haramveil.system",
-                label = "Tamper Protection",
-                isHighRisk = false,
-            ),
-            mode = BlockDetectionMode.SYSTEM_ALERT,
-            timestamp = LocalDateTime.ofInstant(
-                Instant.ofEpochMilli(snapshot.timestampMs),
-                ZoneId.systemDefault(),
-            ),
-        )
-    }
-    return buildList {
-        tamperEventModel?.let(::add)
-        addAll(contentEvents)
-    }.sortedByDescending { event -> event.timestamp }
 }
 
 private fun formatRemainingDuration(
@@ -1046,4 +946,39 @@ private fun formatRemainingDuration(
         minutes > 0L -> "${minutes}m ${seconds.toString().padStart(2, '0')}s"
         else -> "${seconds}s"
     }
+}
+
+private fun BlockEvent.toUiModel(
+    knownAppsByPackage: Map<String, InstalledAppInfo>,
+): BlockEventUiModel {
+    val installedApp = knownAppsByPackage[packageName]
+    val appInfo = installedApp?.copy(label = appName.ifBlank { installedApp.label })
+        ?: fallbackInstalledApp(
+            packageName = packageName,
+            fallbackLabel = appName,
+        )
+    return BlockEventUiModel(
+        id = id.toString(),
+        app = appInfo,
+        mode = BlockDetectionMode.fromTriggerMode(triggerMode),
+        timestamp = LocalDateTime.ofInstant(
+            Instant.ofEpochMilli(timestamp),
+            ZoneId.systemDefault(),
+        ),
+        detectionDetail = detectionDetail,
+    )
+}
+
+private fun MostBlockedAppRecord.toUiModel(
+    knownAppsByPackage: Map<String, InstalledAppInfo>,
+): MostBlockedAppUiModel {
+    val installedApp = knownAppsByPackage[packageName]
+    return MostBlockedAppUiModel(
+        app = installedApp?.copy(label = appName.ifBlank { installedApp.label })
+            ?: fallbackInstalledApp(
+                packageName = packageName,
+                fallbackLabel = appName,
+            ),
+        count = blockCount,
+    )
 }

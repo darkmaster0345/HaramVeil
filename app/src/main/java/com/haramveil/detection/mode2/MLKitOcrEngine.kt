@@ -38,9 +38,10 @@ class MLKitOcrEngine(
     private val context: Context,
     private val dispatcherProvider: DispatcherProvider = DispatcherProvider(),
 ) : OcrEngine {
-    private val recognizer by lazy {
+    private val recognizerDelegate = lazy {
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     }
+    private val recognizer get() = recognizerDelegate.value
 
     override suspend fun extractText(bitmap: Bitmap): OcrResult =
         withContext(dispatcherProvider.default) {
@@ -71,6 +72,12 @@ class MLKitOcrEngine(
 
     override fun isAvailable(): Boolean {
         return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
+    }
+
+    fun close() {
+        if (recognizerDelegate.isInitialized()) {
+            recognizerDelegate.value.close()
+        }
     }
 
     private suspend fun com.google.android.gms.tasks.Task<Text>.awaitResult(): Text =

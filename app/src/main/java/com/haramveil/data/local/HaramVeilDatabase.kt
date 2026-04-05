@@ -33,10 +33,9 @@ import java.time.ZoneId
 
 class HaramVeilDatabase private constructor(
     context: Context,
-    pinHash: String?,
+    passphrase: CharArray,
 ) {
     private val applicationContext = context.applicationContext
-    private val passphrase = StatsDatabasePassphrase.passphraseChars(applicationContext, pinHash)
     private val helper = SqlCipherStatsOpenHelper(
         context = applicationContext,
         passphrase = passphrase,
@@ -61,9 +60,12 @@ class HaramVeilDatabase private constructor(
             context: Context,
         ): HaramVeilDatabase =
             instance ?: synchronized(this) {
+                val appContext = context.applicationContext
+                val pinHash = PinManager(appContext).storedPinHashOrNull()
+                    ?: error("Stats database requires an initialized PIN hash before opening.")
                 instance ?: HaramVeilDatabase(
-                    context = context.applicationContext,
-                    pinHash = PinManager(context.applicationContext).storedPinHashOrNull(),
+                    context = appContext,
+                    passphrase = StatsDatabasePassphrase.passphraseChars(appContext, pinHash),
                 ).also { database ->
                     instance = database
                 }
@@ -88,7 +90,11 @@ class HaramVeilDatabase private constructor(
 
                 val temporaryDatabase = HaramVeilDatabase(
                     context = appContext,
-                    pinHash = oldPinHash,
+                    passphrase = if (!oldPinHash.isNullOrBlank()) {
+                        StatsDatabasePassphrase.passphraseChars(appContext, oldPinHash)
+                    } else {
+                        StatsDatabasePassphrase.legacyFallbackPassphraseChars(appContext)
+                    },
                 )
                 temporaryDatabase.rekey(newPinHash)
             }

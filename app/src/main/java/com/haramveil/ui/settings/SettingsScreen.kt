@@ -17,9 +17,6 @@
  */
 
 package com.haramveil.ui.settings
-
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -329,16 +326,10 @@ fun SettingsScreen(
                     supporting = "GPL-v3",
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
-                SettingsActionRow(
-                    title = "GitHub",
-                    supporting = "github.com/darkmaster0345/HaramVeil",
-                    onClick = {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/darkmaster0345/HaramVeil")).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            },
-                        )
-                    },
+                AboutRow(
+                    icon = Icons.Outlined.Code,
+                    title = "Source Code",
+                    supporting = "Published with the release source package",
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
                 SettingsActionRow(

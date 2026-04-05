@@ -55,4 +55,9 @@ class OcrEngineSelector(
             }
         }
     }
+
+    fun close() {
+        mlKitOcrEngine.close()
+        fossOcrEngine.close()
+    }
 }

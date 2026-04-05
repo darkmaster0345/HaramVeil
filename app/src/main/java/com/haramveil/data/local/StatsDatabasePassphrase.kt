@@ -26,14 +26,39 @@ import javax.crypto.spec.SecretKeySpec
 object StatsDatabasePassphrase {
     private const val DerivedKeyLengthBytes = 32
     private const val HkdfAlgorithm = "HmacSHA256"
-    private const val FallbackPinHash = "haramveil_stats_fallback_pin_hash_v1"
+    private const val LegacyFallbackPinHash = "haramveil_stats_fallback_pin_hash_v1"
     private val InfoBytes = "haramveil.stats.block_events.v1".toByteArray(StandardCharsets.UTF_8)
 
     fun passphraseString(
         context: Context,
-        pinHash: String?,
+        pinHash: String,
     ): String {
-        val inputKeyMaterial = (pinHash ?: FallbackPinHash).toByteArray(StandardCharsets.UTF_8)
+        require(pinHash.isNotBlank()) {
+            "Stats database passphrase requires a non-empty PIN hash."
+        }
+        return derivePassphraseString(
+            context = context,
+            inputKeyMaterial = pinHash.toByteArray(StandardCharsets.UTF_8),
+        )
+    }
+
+    fun passphraseChars(
+        context: Context,
+        pinHash: String,
+    ): CharArray = passphraseString(context, pinHash).toCharArray()
+
+    // Kept only to rekey pre-release local test databases that were created before the fallback was removed.
+    fun legacyFallbackPassphraseChars(
+        context: Context,
+    ): CharArray = derivePassphraseString(
+        context = context,
+        inputKeyMaterial = LegacyFallbackPinHash.toByteArray(StandardCharsets.UTF_8),
+    ).toCharArray()
+
+    private fun derivePassphraseString(
+        context: Context,
+        inputKeyMaterial: ByteArray,
+    ): String {
         val salt = "${context.packageName}:haramveil_stats_room".toByteArray(StandardCharsets.UTF_8)
         val derivedKey = hkdfSha256(
             inputKeyMaterial = inputKeyMaterial,
@@ -45,11 +70,6 @@ object StatsDatabasePassphrase {
             "%02x".format(byte)
         }
     }
-
-    fun passphraseChars(
-        context: Context,
-        pinHash: String?,
-    ): CharArray = passphraseString(context, pinHash).toCharArray()
 
     private fun hkdfSha256(
         inputKeyMaterial: ByteArray,

@@ -23,7 +23,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.Process
 import android.os.SystemClock
-import android.util.Log
 import com.haramveil.data.local.ProtectionPreferencesRepository
 import com.haramveil.data.local.StatsRepository
 import com.haramveil.data.models.ProtectionSettings
@@ -31,6 +30,7 @@ import com.haramveil.utils.DetectionBus
 import com.haramveil.utils.DetectionEvent
 import com.haramveil.utils.DetectionTriggerMode
 import com.haramveil.utils.DispatcherProvider
+import com.haramveil.utils.DebugLog
 import com.haramveil.utils.Mode1WakeRequest
 import com.haramveil.utils.ScreenCaptureManager
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +50,7 @@ class Mode3Processor(
     private val settingsProvider: () -> ProtectionSettings,
     private val dispatcherProvider: DispatcherProvider = DispatcherProvider(),
 ) {
+    private val applicationContext = context.applicationContext
     private val processorScope = CoroutineScope(SupervisorJob() + dispatcherProvider.default)
     private val screenCaptureManager = ScreenCaptureManager(dispatcherProvider)
     private val statsRepository = StatsRepository.getInstance(context)
@@ -186,13 +187,17 @@ class Mode3Processor(
                         triggerMode = DetectionTriggerMode.MODE_3,
                         matchDetails = matchDetails,
                     )
-                    Log.w(LogTag, "Mode 3 unsafe detection for ${trigger.scanResult.packageName}. $matchDetails")
+                    DebugLog.w(applicationContext, LogTag) {
+                        "Mode 3 unsafe detection for ${trigger.scanResult.packageName}. $matchDetails"
+                    }
                 } else {
                     DetectionBus.publishMode3Clear(
                         packageName = trigger.scanResult.packageName,
                         details = "$summaryDetails Top class ${detectionResult.className}.",
                     )
-                    Log.i(LogTag, "Mode 3 clear result for ${trigger.scanResult.packageName}. $summaryDetails")
+                    DebugLog.i(applicationContext, LogTag) {
+                        "Mode 3 clear result for ${trigger.scanResult.packageName}. $summaryDetails"
+                    }
                 }
             } finally {
                 recycleBitmap(captureBitmap)
@@ -224,7 +229,7 @@ class Mode3Processor(
                 packageName = packageName,
                 details = warningMessage,
             )
-            Log.w(LogTag, warningMessage)
+            DebugLog.w(applicationContext, LogTag) { warningMessage }
         }
     }
 

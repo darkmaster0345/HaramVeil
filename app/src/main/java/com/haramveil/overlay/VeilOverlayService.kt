@@ -30,7 +30,6 @@ import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -47,6 +46,7 @@ import com.haramveil.security.AppLockdownManager
 import com.haramveil.utils.DetectionBus
 import com.haramveil.utils.DetectionEvent
 import com.haramveil.utils.DispatcherProvider
+import com.haramveil.utils.DebugLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -151,7 +151,9 @@ class VeilOverlayService : Service() {
             return
         }
 
-        Log.i(LogTag, "Launcher observed after ${currentRequest.packageName} block. Dismissing veil.")
+        DebugLog.i(applicationContext, LogTag) {
+            "Launcher observed after ${currentRequest.packageName} block. Dismissing veil."
+        }
         dismissVeil()
     }
 
@@ -165,10 +167,9 @@ class VeilOverlayService : Service() {
         )
         val forceStopped = forceClosePackageBestEffort(request.packageName)
         navigateHome()
-        Log.i(
-            LogTag,
-            "Veil engaged for ${request.packageName} via ${request.triggerMode}. forceStop=$forceStopped details=${request.matchDetails}",
-        )
+        DebugLog.i(applicationContext, LogTag) {
+            "Veil engaged for ${request.packageName} via ${request.triggerMode}. forceStop=$forceStopped details=${request.matchDetails}"
+        }
     }
 
     private suspend fun navigateHome() {
@@ -186,7 +187,9 @@ class VeilOverlayService : Service() {
         request: DetectionEvent.VeilRequested,
     ) {
         if (!android.provider.Settings.canDrawOverlays(this)) {
-            Log.w(LogTag, "Overlay permission is missing. Running protection actions without the veil UI.")
+            DebugLog.w(applicationContext, LogTag) {
+                "Overlay permission is missing. Running protection actions without the veil UI."
+            }
             return
         }
 

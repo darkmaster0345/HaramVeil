@@ -78,6 +78,7 @@ class Mode2Processor(
 
     fun destroy() {
         stop()
+        ocrEngineSelector.close()
         processorScope.cancel()
     }
 

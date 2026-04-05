@@ -19,8 +19,8 @@
 package com.haramveil.security
 
 import android.content.Context
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import android.os.SystemClock
+import android.provider.Settings
 import com.haramveil.R
 import com.haramveil.data.local.OnboardingPreferencesRepository
 import com.haramveil.data.models.SecurityQuestion
@@ -33,17 +33,7 @@ class SecurityQuestionsManager(
     private val applicationContext = context.applicationContext
     private val onboardingPreferencesRepository = OnboardingPreferencesRepository(applicationContext)
     private val encryptedPreferences by lazy {
-        val masterKey = MasterKey.Builder(applicationContext)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        EncryptedSharedPreferences.create(
-            applicationContext,
-            PreferenceFileName,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        EncryptedPrefsFactory.create(applicationContext, PreferenceFileName)
     }
 
     fun questionCatalog(): List<SecurityQuestion> {
@@ -126,8 +116,11 @@ class SecurityQuestionsManager(
         val updatedAttempts = encryptedPreferences.getInt(QuestionFailedAttemptsKey, 0) + 1
         val editor = encryptedPreferences.edit()
         if (updatedAttempts >= MaxFailedAttempts) {
+            val nowWallClockMs = System.currentTimeMillis()
             editor.putInt(QuestionFailedAttemptsKey, updatedAttempts)
-            editor.putLong(QuestionLockoutUntilKey, System.currentTimeMillis() + LockoutDurationMs)
+            editor.putLong(QuestionLockoutUntilKey, nowWallClockMs + LockoutDurationMs)
+            editor.putLong(QuestionLockoutElapsedUntilKey, SystemClock.elapsedRealtime() + LockoutDurationMs)
+            editor.putInt(QuestionLockoutBootCountKey, currentBootCount())
         } else {
             editor.putInt(QuestionFailedAttemptsKey, updatedAttempts)
         }
@@ -138,18 +131,19 @@ class SecurityQuestionsManager(
         encryptedPreferences.edit()
             .putInt(QuestionFailedAttemptsKey, 0)
             .putLong(QuestionLockoutUntilKey, 0L)
+            .putLong(QuestionLockoutElapsedUntilKey, 0L)
+            .putInt(QuestionLockoutBootCountKey, 0)
             .apply()
     }
 
     fun isLockedOut(): Boolean {
         clearExpiredLockoutIfNeeded()
-        return encryptedPreferences.getLong(QuestionLockoutUntilKey, 0L) > System.currentTimeMillis()
+        return computeRemainingLockoutMs() > 0L
     }
 
     fun getLockoutRemainingMs(): Long {
         clearExpiredLockoutIfNeeded()
-        return (encryptedPreferences.getLong(QuestionLockoutUntilKey, 0L) - System.currentTimeMillis())
-            .coerceAtLeast(0L)
+        return computeRemainingLockoutMs()
     }
 
     fun remainingAttemptsBeforeLockout(): Int {
@@ -163,15 +157,50 @@ class SecurityQuestionsManager(
 
     private fun clearExpiredLockoutIfNeeded() {
         val lockoutUntil = encryptedPreferences.getLong(QuestionLockoutUntilKey, 0L)
-        if (lockoutUntil == 0L || lockoutUntil > System.currentTimeMillis()) {
+        if (lockoutUntil == 0L || computeRemainingLockoutMs() > 0L) {
             return
         }
 
         encryptedPreferences.edit()
             .putInt(QuestionFailedAttemptsKey, 0)
             .putLong(QuestionLockoutUntilKey, 0L)
+            .putLong(QuestionLockoutElapsedUntilKey, 0L)
+            .putInt(QuestionLockoutBootCountKey, 0)
             .apply()
     }
+
+    // Use elapsedRealtime during the same boot so wall-clock changes do not immediately clear lockout.
+    private fun computeRemainingLockoutMs(): Long {
+        val wallClockRemainingMs =
+            encryptedPreferences.getLong(QuestionLockoutUntilKey, 0L) - System.currentTimeMillis()
+        if (wallClockRemainingMs <= 0L) {
+            val sameBootRemainingMs = remainingElapsedRealtimeLockoutMs()
+            return sameBootRemainingMs.coerceAtLeast(0L)
+        }
+
+        val sameBootRemainingMs = remainingElapsedRealtimeLockoutMs()
+        return maxOf(wallClockRemainingMs, sameBootRemainingMs, 0L)
+    }
+
+    private fun remainingElapsedRealtimeLockoutMs(): Long {
+        val storedBootCount = encryptedPreferences.getInt(QuestionLockoutBootCountKey, 0)
+        val currentBootCount = currentBootCount()
+        if (storedBootCount == 0 || storedBootCount != currentBootCount) {
+            return 0L
+        }
+
+        val elapsedLockoutUntil = encryptedPreferences.getLong(QuestionLockoutElapsedUntilKey, 0L)
+        if (elapsedLockoutUntil == 0L) {
+            return 0L
+        }
+
+        return elapsedLockoutUntil - SystemClock.elapsedRealtime()
+    }
+
+    private fun currentBootCount(): Int =
+        runCatching {
+            Settings.Global.getInt(applicationContext.contentResolver, Settings.Global.BOOT_COUNT)
+        }.getOrDefault(0)
 
     private fun hashAnswer(
         questionId: String,
@@ -197,6 +226,8 @@ class SecurityQuestionsManager(
         private const val PreferenceFileName = "haramveil_recovery_state"
         private const val QuestionFailedAttemptsKey = "question_failed_attempts"
         private const val QuestionLockoutUntilKey = "question_lockout_until_epoch_ms"
+        private const val QuestionLockoutElapsedUntilKey = "question_lockout_until_elapsed_ms"
+        private const val QuestionLockoutBootCountKey = "question_lockout_boot_count"
         private const val MaxFailedAttempts = 3
         private const val LockoutDurationMs = 20 * 60 * 1_000L
 

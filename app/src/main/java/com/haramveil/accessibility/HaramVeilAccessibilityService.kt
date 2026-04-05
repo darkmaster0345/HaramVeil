@@ -19,8 +19,6 @@
 package com.haramveil.accessibility
 
 import android.accessibilityservice.AccessibilityServiceInfo
-import android.content.pm.ApplicationInfo
-import android.util.Log
 import android.accessibilityservice.AccessibilityService
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
@@ -37,6 +35,7 @@ import com.haramveil.security.AppLockdownManager
 import com.haramveil.utils.DetectionBus
 import com.haramveil.utils.DetectionTriggerMode
 import com.haramveil.utils.DispatcherProvider
+import com.haramveil.utils.DebugLog
 import com.haramveil.utils.Mode1WakeRequest
 import com.haramveil.utils.ThrottleManager
 import com.haramveil.utils.ThrottledScanTrigger
@@ -104,7 +103,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             collectorsStarted = true
         }
         VeilOverlayController.start(applicationContext)
-        Log.i(LogTag, "Accessibility service connected.")
+        DebugLog.i(applicationContext, LogTag) { "Accessibility service connected." }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -149,7 +148,9 @@ class HaramVeilAccessibilityService : AccessibilityService() {
                     triggerMode = DetectionTriggerMode.LOCKDOWN,
                     matchDetails = "App reopen intercepted while its lockdown timer was still active.",
                 )
-                Log.i(LogTag, "Lockdown re-triggered for $packageName before content scan.")
+                DebugLog.i(applicationContext, LogTag) {
+                    "Lockdown re-triggered for $packageName before content scan."
+                }
                 return
             }
         }
@@ -169,7 +170,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        Log.w(LogTag, "Accessibility service interrupted by the system.")
+        DebugLog.w(applicationContext, LogTag) { "Accessibility service interrupted by the system." }
     }
 
     override fun onDestroy() {
@@ -258,10 +259,9 @@ class HaramVeilAccessibilityService : AccessibilityService() {
                 RiskLevel.LOW -> Unit
             }
 
-            Log.i(
-                LogTag,
-                "Mode 1 triggered for ${scanResult.packageName} with ${scanResult.riskLevel} risk. $matchDetails",
-            )
+            DebugLog.i(applicationContext, LogTag) {
+                "Mode 1 triggered for ${scanResult.packageName} with ${scanResult.riskLevel} risk. $matchDetails"
+            }
         } finally {
             trigger.recycle()
         }
@@ -291,8 +291,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
     }
 
     private fun recordDebugProcessedEvent() {
-        val isDebuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
-        if (!isDebuggable) {
+        if (!DebugLog.isDebuggable(applicationContext)) {
             return
         }
 
@@ -302,7 +301,9 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             return
         }
 
-        Log.d(LogTag, "Mode 1 events processed per minute: $processedMode1EventsInWindow")
+        DebugLog.d(applicationContext, LogTag) {
+            "Mode 1 events processed per minute: $processedMode1EventsInWindow"
+        }
         processedMode1EventsInWindow = 0
         processedMetricsWindowStartedAtMs = SystemClock.elapsedRealtime()
     }

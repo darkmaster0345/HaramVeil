@@ -19,8 +19,6 @@
 package com.haramveil.security
 
 import android.content.Context
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import com.haramveil.data.models.ActiveLockdown
 
 class AppLockdownManager(
@@ -28,17 +26,7 @@ class AppLockdownManager(
 ) {
     private val applicationContext = context.applicationContext
     private val encryptedPreferences by lazy {
-        val masterKey = MasterKey.Builder(applicationContext)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        EncryptedSharedPreferences.create(
-            applicationContext,
-            PreferenceFileName,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        EncryptedPrefsFactory.create(applicationContext, PreferenceFileName)
     }
 
     fun isLocked(

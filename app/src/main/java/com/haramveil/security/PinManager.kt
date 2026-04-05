@@ -19,8 +19,8 @@
 package com.haramveil.security
 
 import android.content.Context
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import android.os.SystemClock
+import android.provider.Settings
 import at.favre.lib.crypto.bcrypt.BCrypt
 import com.haramveil.data.local.HaramVeilDatabase
 
@@ -29,17 +29,7 @@ class PinManager(
 ) {
     private val applicationContext = context.applicationContext
     private val encryptedPreferences by lazy {
-        val masterKey = MasterKey.Builder(applicationContext)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        EncryptedSharedPreferences.create(
-            applicationContext,
-            PreferenceFileName,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        EncryptedPrefsFactory.create(applicationContext, PreferenceFileName)
     }
 
     fun storePIN(pin: String) {
@@ -54,6 +44,8 @@ class PinManager(
             .putString(PinHashKey, bcryptHash)
             .putInt(PinFailedAttemptsKey, 0)
             .putLong(PinLockoutUntilKey, 0L)
+            .putLong(PinLockoutElapsedUntilKey, 0L)
+            .putInt(PinLockoutBootCountKey, 0)
             .apply()
     }
 
@@ -83,8 +75,11 @@ class PinManager(
         val editor = encryptedPreferences.edit()
 
         if (updatedAttempts >= MaxFailedAttempts) {
+            val nowWallClockMs = System.currentTimeMillis()
             editor.putInt(PinFailedAttemptsKey, updatedAttempts)
-            editor.putLong(PinLockoutUntilKey, System.currentTimeMillis() + LockoutDurationMs)
+            editor.putLong(PinLockoutUntilKey, nowWallClockMs + LockoutDurationMs)
+            editor.putLong(PinLockoutElapsedUntilKey, SystemClock.elapsedRealtime() + LockoutDurationMs)
+            editor.putInt(PinLockoutBootCountKey, currentBootCount())
         } else {
             editor.putInt(PinFailedAttemptsKey, updatedAttempts)
         }
@@ -96,18 +91,19 @@ class PinManager(
         encryptedPreferences.edit()
             .putInt(PinFailedAttemptsKey, 0)
             .putLong(PinLockoutUntilKey, 0L)
+            .putLong(PinLockoutElapsedUntilKey, 0L)
+            .putInt(PinLockoutBootCountKey, 0)
             .apply()
     }
 
     fun isLockedOut(): Boolean {
         clearExpiredLockoutIfNeeded()
-        return encryptedPreferences.getLong(PinLockoutUntilKey, 0L) > System.currentTimeMillis()
+        return computeRemainingLockoutMs() > 0L
     }
 
     fun getLockoutRemainingMs(): Long {
         clearExpiredLockoutIfNeeded()
-        return (encryptedPreferences.getLong(PinLockoutUntilKey, 0L) - System.currentTimeMillis())
-            .coerceAtLeast(0L)
+        return computeRemainingLockoutMs()
     }
 
     fun remainingAttemptsBeforeLockout(): Int {
@@ -121,21 +117,58 @@ class PinManager(
 
     private fun clearExpiredLockoutIfNeeded() {
         val lockoutUntil = encryptedPreferences.getLong(PinLockoutUntilKey, 0L)
-        if (lockoutUntil == 0L || lockoutUntil > System.currentTimeMillis()) {
+        if (lockoutUntil == 0L || computeRemainingLockoutMs() > 0L) {
             return
         }
 
         encryptedPreferences.edit()
             .putInt(PinFailedAttemptsKey, 0)
             .putLong(PinLockoutUntilKey, 0L)
+            .putLong(PinLockoutElapsedUntilKey, 0L)
+            .putInt(PinLockoutBootCountKey, 0)
             .apply()
     }
+
+    // Use elapsedRealtime during the same boot so wall-clock changes do not immediately clear lockout.
+    private fun computeRemainingLockoutMs(): Long {
+        val wallClockRemainingMs =
+            encryptedPreferences.getLong(PinLockoutUntilKey, 0L) - System.currentTimeMillis()
+        if (wallClockRemainingMs <= 0L) {
+            val sameBootRemainingMs = remainingElapsedRealtimeLockoutMs()
+            return sameBootRemainingMs.coerceAtLeast(0L)
+        }
+
+        val sameBootRemainingMs = remainingElapsedRealtimeLockoutMs()
+        return maxOf(wallClockRemainingMs, sameBootRemainingMs, 0L)
+    }
+
+    private fun remainingElapsedRealtimeLockoutMs(): Long {
+        val storedBootCount = encryptedPreferences.getInt(PinLockoutBootCountKey, 0)
+        val currentBootCount = currentBootCount()
+        if (storedBootCount == 0 || storedBootCount != currentBootCount) {
+            return 0L
+        }
+
+        val elapsedLockoutUntil = encryptedPreferences.getLong(PinLockoutElapsedUntilKey, 0L)
+        if (elapsedLockoutUntil == 0L) {
+            return 0L
+        }
+
+        return elapsedLockoutUntil - SystemClock.elapsedRealtime()
+    }
+
+    private fun currentBootCount(): Int =
+        runCatching {
+            Settings.Global.getInt(applicationContext.contentResolver, Settings.Global.BOOT_COUNT)
+        }.getOrDefault(0)
 
     companion object {
         private const val PreferenceFileName = "haramveil_secure_state"
         private const val PinHashKey = "pin_bcrypt_hash"
         private const val PinFailedAttemptsKey = "pin_failed_attempts"
         private const val PinLockoutUntilKey = "pin_lockout_until_epoch_ms"
+        private const val PinLockoutElapsedUntilKey = "pin_lockout_until_elapsed_ms"
+        private const val PinLockoutBootCountKey = "pin_lockout_boot_count"
         private const val BcryptCost = 12
         private const val MaxFailedAttempts = 3
         private const val LockoutDurationMs = 20 * 60 * 1_000L

@@ -121,6 +121,14 @@ class FossOcrEngine(
 
     override fun isAvailable(): Boolean = modelDownloadManager.modelFile().isFile
 
+    fun close() {
+        synchronized(sessionLock) {
+            cachedSession?.close()
+            cachedSession = null
+            cachedCharacters = null
+        }
+    }
+
     private fun openSession(): OrtSession? {
         cachedSession?.let { return it }
 

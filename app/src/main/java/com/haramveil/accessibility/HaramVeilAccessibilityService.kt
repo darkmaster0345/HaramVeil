@@ -29,6 +29,8 @@ import com.haramveil.detection.mode1.RiskLevel
 import com.haramveil.detection.mode2.Mode2Processor
 import com.haramveil.detection.mode1.UITreeScanner
 import com.haramveil.detection.mode3.Mode3Processor
+import com.haramveil.overlay.VeilOverlayController
+import com.haramveil.security.AppLockdownManager
 import com.haramveil.utils.DetectionBus
 import com.haramveil.utils.DetectionTriggerMode
 import com.haramveil.utils.DispatcherProvider
@@ -48,6 +50,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
     private val dispatcherProvider = DispatcherProvider()
     private val uiTreeScanner = UITreeScanner()
     private lateinit var protectionPreferencesRepository: ProtectionPreferencesRepository
+    private lateinit var appLockdownManager: AppLockdownManager
     private val protectionSettingsState = MutableStateFlow(ProtectionSettings())
     private var collectorsStarted = false
     private lateinit var throttleManager: ThrottleManager
@@ -57,6 +60,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
     override fun onCreate() {
         super.onCreate()
         protectionPreferencesRepository = ProtectionPreferencesRepository(applicationContext)
+        appLockdownManager = AppLockdownManager(applicationContext)
         throttleManager = ThrottleManager(
             scope = serviceScope,
             dispatcherProvider = dispatcherProvider,
@@ -92,6 +96,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             startCollectors()
             collectorsStarted = true
         }
+        VeilOverlayController.start(applicationContext)
         Log.i(LogTag, "Accessibility service connected.")
     }
 
@@ -105,16 +110,35 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             return
         }
 
-        val currentSettings = protectionSettingsState.value
-        if (!currentSettings.mode1Enabled) {
-            return
-        }
-
         val packageName = event.packageName
             ?.toString()
             ?.takeIf(String::isNotBlank)
             ?: rootInActiveWindow?.packageName?.toString()?.takeIf(String::isNotBlank)
             ?: return
+
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            DetectionBus.publishWindowStateObserved(
+                packageName = packageName,
+                eventType = event.eventType,
+            )
+
+            val currentSettings = protectionSettingsState.value
+            if (appLockdownManager.isLocked(packageName)) {
+                appLockdownManager.lockApp(packageName, currentSettings.lockdownDurationMs)
+                DetectionBus.publishVeilRequested(
+                    packageName = packageName,
+                    triggerMode = DetectionTriggerMode.LOCKDOWN,
+                    matchDetails = "App reopen intercepted while its lockdown timer was still active.",
+                )
+                Log.i(LogTag, "Lockdown re-triggered for $packageName before content scan.")
+                return
+            }
+        }
+
+        val currentSettings = protectionSettingsState.value
+        if (!currentSettings.mode1Enabled) {
+            return
+        }
 
         if (packageName !in currentSettings.monitoredPackages) {
             return

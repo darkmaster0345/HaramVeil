@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.haramveil.ui.ActiveLockdownUiModel
 import com.haramveil.ui.BlockEventUiModel
 import com.haramveil.ui.HaramVeilSectionCard
 import com.haramveil.ui.HaramVeilWordmarkHeader
@@ -64,6 +65,7 @@ fun DashboardScreen(
     monitoredAppsCount: Int,
     blocksToday: Int,
     accessibilityServiceActive: Boolean,
+    activeLockdowns: List<ActiveLockdownUiModel>,
     recentEvents: List<BlockEventUiModel>,
     onProtectionEnabledChange: (Boolean) -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
@@ -177,6 +179,16 @@ fun DashboardScreen(
                     )
                 }
             }
+            if (activeLockdowns.isNotEmpty()) {
+                item {
+                    HaramVeilSectionCard {
+                        SectionLabel(text = "Active lockdowns")
+                        activeLockdowns.forEach { lockdown ->
+                            ActiveLockdownRow(lockdown = lockdown)
+                        }
+                    }
+                }
+            }
             item {
                 HaramVeilSectionCard {
                     Row(
@@ -226,7 +238,7 @@ fun DashboardScreen(
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                text = "This Phase 3 dashboard is UI-only. Detection, lockdown enforcement, and real stats storage will be wired in later phases.",
+                                text = "The veil and lockdown timer are now active. Stats are still preview data until the logging phase is wired.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -247,6 +259,39 @@ fun DashboardScreen(
                 showPinDialog = false
                 onProtectionEnabledChange(false)
             },
+        )
+    }
+}
+
+@Composable
+private fun ActiveLockdownRow(
+    lockdown: ActiveLockdownUiModel,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        InstalledAppIcon(
+            app = lockdown.app,
+            size = 42.dp,
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = lockdown.app.label,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = lockdown.app.packageName,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        StatusPill(
+            label = lockdown.remainingLabel,
+            backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
+            contentColor = MaterialTheme.colorScheme.secondary,
         )
     }
 }

@@ -21,8 +21,34 @@ package com.haramveil.service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.haramveil.data.local.OnboardingPreferencesRepository
+import com.haramveil.overlay.VeilOverlayController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class BootReceiver : BroadcastReceiver() {
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED) {
+            return
+        }
 
-    override fun onReceive(context: Context, intent: Intent) = Unit
+        val pendingResult = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            try {
+                val onboardingComplete = OnboardingPreferencesRepository(context.applicationContext)
+                    .readSnapshot()
+                    .onboardingComplete
+                if (onboardingComplete) {
+                    VeilOverlayController.start(context.applicationContext)
+                }
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
 }

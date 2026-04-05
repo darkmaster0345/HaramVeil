@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  HaramVeil
+  Copyright (C) 2026 HaramVeil Contributors
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M120,16 L164,60 L120,104 L76,60 Z"
+        android:strokeColor="#6EA684"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M120,136 L164,180 L120,224 L76,180 Z"
+        android:strokeColor="#6EA684"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M16,120 L60,76 L104,120 L60,164 Z"
+        android:strokeColor="#6EA684"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M136,120 L180,76 L224,120 L180,164 Z"
+        android:strokeColor="#6EA684"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M120,40 L200,120 L120,200 L40,120 Z"
+        android:strokeColor="#C9A65B"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M120,72 L168,120 L120,168 L72,120 Z"
+        android:strokeColor="#DCE8DE"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M120,88 L152,120 L120,152 L88,120 Z"
+        android:strokeColor="#6EA684"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2" />
+</vector>

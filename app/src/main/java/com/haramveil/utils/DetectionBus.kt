@@ -31,6 +31,7 @@ enum class DetectionTriggerMode {
     MODE_1,
     MODE_2,
     MODE_3,
+    LOCKDOWN,
 }
 
 data class Mode1WakeRequest(
@@ -69,6 +70,12 @@ sealed interface DetectionEvent {
         val packageName: String,
         val triggerMode: DetectionTriggerMode,
         val matchDetails: String,
+    ) : DetectionEvent
+
+    data class WindowStateObserved(
+        val packageName: String,
+        val eventType: Int,
+        val observedAtEpochMs: Long = System.currentTimeMillis(),
     ) : DetectionEvent
 }
 
@@ -146,6 +153,18 @@ object DetectionBus {
                 packageName = packageName,
                 triggerMode = triggerMode,
                 matchDetails = matchDetails,
+            ),
+        )
+    }
+
+    fun publishWindowStateObserved(
+        packageName: String,
+        eventType: Int,
+    ) {
+        _events.tryEmit(
+            DetectionEvent.WindowStateObserved(
+                packageName = packageName,
+                eventType = eventType,
             ),
         )
     }

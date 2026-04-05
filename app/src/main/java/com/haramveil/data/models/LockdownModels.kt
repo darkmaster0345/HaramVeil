@@ -18,18 +18,10 @@
 
 package com.haramveil.data.models
 
-data class ProtectionSettings(
-    val monitoredPackages: Set<String> = emptySet(),
-    val keywordBlocklist: List<String> = emptyList(),
-    val mode1Enabled: Boolean = true,
-    val mode2Enabled: Boolean = true,
-    val mode3Enabled: Boolean = false,
-    val selectedTextEngine: TextRecognitionEngine = TextRecognitionEngine.ML_KIT,
-    val selectedVisualModel: VisualModelOption? = null,
-    val frameSkipIntervalMs: Long = 500L,
-    val mode3InferenceIntervalMs: Long = 1_000L,
-    val lockdownDurationMs: Long = 15 * 60 * 1_000L,
-    val topCapturePercent: Int = 30,
-    val middleCapturePercent: Int = 40,
-    val accessibilitySettingsPromptShown: Boolean = false,
-)
+data class ActiveLockdown(
+    val packageName: String,
+    val expiresAtEpochMs: Long,
+) {
+    fun remainingDurationMs(nowEpochMs: Long = System.currentTimeMillis()): Long =
+        (expiresAtEpochMs - nowEpochMs).coerceAtLeast(0L)
+}

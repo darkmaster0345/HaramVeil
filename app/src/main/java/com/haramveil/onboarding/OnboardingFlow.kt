@@ -78,6 +78,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -113,6 +114,7 @@ import com.haramveil.data.models.SecurityQuestion
 import com.haramveil.data.models.SecurityQuestionCatalog
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
+import com.haramveil.overlay.VeilOverlayController
 import com.haramveil.security.HaramVeilDeviceAdminReceiver
 import com.haramveil.ui.HaramVeilMainShell
 import kotlinx.coroutines.CoroutineScope
@@ -135,12 +137,19 @@ private enum class AppDestination(
 fun HaramVeilRoot(
     viewModel: OnboardingViewModel,
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     if (uiState.isInitializing) {
         FullScreenLoading()
         return
+    }
+
+    LaunchedEffect(uiState.onboardingComplete) {
+        if (uiState.onboardingComplete) {
+            VeilOverlayController.start(context)
+        }
     }
 
     val navController = rememberNavController()

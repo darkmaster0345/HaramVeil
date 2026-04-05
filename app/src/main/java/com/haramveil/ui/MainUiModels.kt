@@ -76,6 +76,32 @@ enum class LockdownDurationOption(
         label = "Default",
         minutes = null,
     ),
+    ;
+
+    fun toDurationMs(
+        fallbackDurationMs: Long = DefaultCustomDurationMs,
+    ): Long = when (this) {
+        MINUTES_5 -> 5 * 60 * 1_000L
+        MINUTES_15 -> 15 * 60 * 1_000L
+        MINUTES_30 -> 30 * 60 * 1_000L
+        HOUR_1 -> 60 * 60 * 1_000L
+        CUSTOM,
+        DEFAULT,
+        -> fallbackDurationMs
+    }
+
+    companion object {
+        const val DefaultCustomDurationMs = 45 * 60 * 1_000L
+
+        fun fromDurationMs(durationMs: Long): LockdownDurationOption =
+            when (durationMs) {
+                MINUTES_5.toDurationMs() -> MINUTES_5
+                MINUTES_15.toDurationMs() -> MINUTES_15
+                MINUTES_30.toDurationMs() -> MINUTES_30
+                HOUR_1.toDurationMs() -> HOUR_1
+                else -> CUSTOM
+            }
+    }
 }
 
 data class BlockEventUiModel(
@@ -88,6 +114,12 @@ data class BlockEventUiModel(
 data class MostBlockedAppUiModel(
     val app: InstalledAppInfo,
     val count: Int,
+)
+
+data class ActiveLockdownUiModel(
+    val app: InstalledAppInfo,
+    val remainingDurationMs: Long,
+    val remainingLabel: String,
 )
 
 data class AppMonitoringUiModel(

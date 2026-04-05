@@ -52,6 +52,15 @@
                 android:value="privacy_first_content_filtering_placeholder" />
         </service>
 
+        <service
+            android:name=".overlay.VeilOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="privacy_first_content_filtering_overlay" />
+        </service>
+
         <receiver
             android:name=".service.BootReceiver"
             android:exported="true">

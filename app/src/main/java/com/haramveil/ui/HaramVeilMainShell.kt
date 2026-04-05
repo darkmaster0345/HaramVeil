@@ -51,7 +51,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,14 +58,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -83,6 +82,7 @@ import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
 import com.haramveil.detection.mode3.ModelSelectionState
 import com.haramveil.detection.mode3.ModelSelector
+import com.haramveil.security.AppLockdownManager
 import com.haramveil.ui.dashboard.DashboardRoute
 import com.haramveil.ui.dashboard.DashboardScreen
 import com.haramveil.ui.settings.AdvancedSettingsScreen
@@ -90,8 +90,8 @@ import com.haramveil.ui.settings.SettingsRoute
 import com.haramveil.ui.settings.SettingsScreen
 import com.haramveil.ui.stats.StatsRoute
 import com.haramveil.ui.stats.StatsScreen
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -133,6 +133,9 @@ fun HaramVeilMainShell(
     val scope = rememberCoroutineScope()
     val protectionPreferencesRepository = remember(context) {
         ProtectionPreferencesRepository(context.applicationContext)
+    }
+    val appLockdownManager = remember(context) {
+        AppLockdownManager(context.applicationContext)
     }
     val modelSelector = remember(context, protectionPreferencesRepository) {
         ModelSelector(
@@ -185,7 +188,9 @@ fun HaramVeilMainShell(
         else -> VisualModelOption.MODEL_320
     }
     val canOffer640Model = resolvedModelSelectionState?.supports640Model ?: supports640Model
-    var globalLockdownDuration by remember { mutableStateOf(LockdownDurationOption.MINUTES_15) }
+    val globalLockdownDuration = remember(protectionSettings.lockdownDurationMs) {
+        LockdownDurationOption.fromDurationMs(protectionSettings.lockdownDurationMs)
+    }
     val keywordBlocklist = protectionSettings.keywordBlocklist
     val mode1OverrideEnabled = protectionSettings.mode1Enabled
     val mode2OverrideEnabled = protectionSettings.mode2Enabled
@@ -201,8 +206,19 @@ fun HaramVeilMainShell(
             ),
         )
     }
+    var activeLockdowns by remember { mutableStateOf(emptyList<ActiveLockdownUiModel>()) }
 
     val monitoredApps = appConfigs.filter { it.isMonitored }
+    val knownAppsByPackage = remember(appConfigs, installedApps) {
+        buildMap {
+            installedApps.forEach { app ->
+                put(app.packageName, app)
+            }
+            appConfigs.forEach { appConfig ->
+                put(appConfig.app.packageName, appConfig.app)
+            }
+        }
+    }
     val activeModeCount = listOf(
         mode1OverrideEnabled,
         mode2OverrideEnabled,
@@ -215,12 +231,9 @@ fun HaramVeilMainShell(
     )
     val blockCounts = remember(blockEvents) { deriveBlockCounts(blockEvents) }
     val mostBlockedApp = remember(blockEvents) { deriveMostBlockedApp(blockEvents) }
-    val activeLockdownMessage = remember(blockEvents, protectionEnabled, globalLockdownDuration) {
-        blockEvents.firstOrNull()?.takeIf { protectionEnabled }?.let { latestEvent ->
-            val targetMinutes = globalLockdownDuration.minutes ?: 45
-            val elapsedMinutes = Duration.between(latestEvent.timestamp, LocalDateTime.now()).toMinutes()
-            val remainingMinutes = (targetMinutes - elapsedMinutes).coerceAtLeast(1)
-            "${latestEvent.app.label} locked for $remainingMinutes minute${if (remainingMinutes == 1L) "" else "s"} remaining"
+    val activeLockdownMessage = remember(activeLockdowns) {
+        activeLockdowns.firstOrNull()?.let { lockdown ->
+            "${lockdown.app.label} locked for ${lockdown.remainingLabel} remaining"
         }
     }
     val selectedBottomDestination = when (currentRoute) {
@@ -242,6 +255,20 @@ fun HaramVeilMainShell(
         protectionSettings.selectedVisualModel,
     ) {
         resolvedModelSelectionState = modelSelector.readSelectionState()
+    }
+
+    LaunchedEffect(knownAppsByPackage) {
+        while (true) {
+            activeLockdowns = appLockdownManager.activeLockdowns().map { lockdown ->
+                val app = knownAppsByPackage[lockdown.packageName] ?: fallbackInstalledApp(lockdown.packageName)
+                ActiveLockdownUiModel(
+                    app = app,
+                    remainingDurationMs = lockdown.remainingDurationMs(),
+                    remainingLabel = formatRemainingDuration(lockdown.remainingDurationMs()),
+                )
+            }
+            delay(1_000L)
+        }
     }
 
     HaramVeilScreenBackground {
@@ -328,6 +355,7 @@ fun HaramVeilMainShell(
                             monitoredAppsCount = monitoredApps.size,
                             blocksToday = blockCounts.today,
                             accessibilityServiceActive = accessibilityServiceActive,
+                            activeLockdowns = activeLockdowns,
                             recentEvents = blockEvents.take(3),
                             onProtectionEnabledChange = { shouldEnable ->
                                 protectionEnabled = shouldEnable
@@ -400,7 +428,13 @@ fun HaramVeilMainShell(
                                 }
                             },
                             onLockdownDurationSelected = { duration ->
-                                globalLockdownDuration = duration
+                                scope.launch {
+                                    val persistedDurationMs = when (duration) {
+                                        LockdownDurationOption.CUSTOM -> LockdownDurationOption.DefaultCustomDurationMs
+                                        else -> duration.toDurationMs(protectionSettings.lockdownDurationMs)
+                                    }
+                                    protectionPreferencesRepository.saveLockdownDurationMs(persistedDurationMs)
+                                }
                             },
                         )
                     }
@@ -739,4 +773,32 @@ private fun deriveMostBlockedApp(
                 count = entry.value,
             )
         }
+}
+
+private fun fallbackInstalledApp(
+    packageName: String,
+): InstalledAppInfo {
+    val fallbackLabel = packageName.substringAfterLast('.')
+        .replace('_', ' ')
+        .replace('-', ' ')
+        .replaceFirstChar { character ->
+            if (character.isLowerCase()) character.titlecase() else character.toString()
+        }
+    return InstalledAppInfo(
+        packageName = packageName,
+        label = fallbackLabel,
+        isHighRisk = false,
+    )
+}
+
+private fun formatRemainingDuration(
+    remainingDurationMs: Long,
+): String {
+    val totalSeconds = (remainingDurationMs / 1_000L).coerceAtLeast(0L)
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return when {
+        minutes > 0L -> "${minutes}m ${seconds.toString().padStart(2, '0')}s"
+        else -> "${seconds}s"
+    }
 }

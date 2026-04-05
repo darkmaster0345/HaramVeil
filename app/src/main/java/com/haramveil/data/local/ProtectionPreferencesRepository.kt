@@ -60,6 +60,8 @@ class ProtectionPreferencesRepository(
                     ?: HaramVeilPreferenceKeys.DefaultFrameSkipIntervalMs,
                 mode3InferenceIntervalMs = preferences[HaramVeilPreferenceKeys.Mode3InferenceIntervalMs]
                     ?: HaramVeilPreferenceKeys.DefaultMode3InferenceIntervalMs,
+                lockdownDurationMs = preferences[HaramVeilPreferenceKeys.LockdownDurationMs]
+                    ?: HaramVeilPreferenceKeys.DefaultLockdownDurationMs,
                 topCapturePercent = (preferences[HaramVeilPreferenceKeys.TopCapturePercent]
                     ?: HaramVeilPreferenceKeys.DefaultTopCapturePercent.toLong())
                     .toInt(),
@@ -127,6 +129,13 @@ class ProtectionPreferencesRepository(
         context.haramVeilPreferencesDataStore.edit { preferences ->
             preferences[HaramVeilPreferenceKeys.Mode3InferenceIntervalMs] =
                 intervalMs.coerceIn(minimumValue = 1_000L, maximumValue = 2_000L)
+        }
+    }
+
+    suspend fun saveLockdownDurationMs(durationMs: Long) {
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.LockdownDurationMs] =
+                durationMs.coerceIn(minimumValue = 5 * 60 * 1_000L, maximumValue = 24 * 60 * 60 * 1_000L)
         }
     }
 

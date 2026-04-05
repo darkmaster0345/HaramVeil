@@ -16,20 +16,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.haramveil.data.models
+package com.haramveil.overlay
 
-data class ProtectionSettings(
-    val monitoredPackages: Set<String> = emptySet(),
-    val keywordBlocklist: List<String> = emptyList(),
-    val mode1Enabled: Boolean = true,
-    val mode2Enabled: Boolean = true,
-    val mode3Enabled: Boolean = false,
-    val selectedTextEngine: TextRecognitionEngine = TextRecognitionEngine.ML_KIT,
-    val selectedVisualModel: VisualModelOption? = null,
-    val frameSkipIntervalMs: Long = 500L,
-    val mode3InferenceIntervalMs: Long = 1_000L,
-    val lockdownDurationMs: Long = 15 * 60 * 1_000L,
-    val topCapturePercent: Int = 30,
-    val middleCapturePercent: Int = 40,
-    val accessibilitySettingsPromptShown: Boolean = false,
+enum class VeilPassageType {
+    AYAH,
+    HADITH,
+}
+
+data class VeilPassage(
+    val id: Int,
+    val type: VeilPassageType,
+    val arabic: String,
+    val english: String,
+    val source: String,
 )

@@ -3,4 +3,8 @@
     <string name="app_name">HaramVeil</string>
     <string name="loading_message">HaramVeil is loading...</string>
     <string name="accessibility_service_description">HaramVeil monitors the visible app UI to detect high-risk content on device.</string>
+    <string name="veil_service_channel_name">HaramVeil protection</string>
+    <string name="veil_service_channel_description">Keeps the veil overlay ready to respond when HaramVeil blocks content.</string>
+    <string name="veil_service_notification_title">HaramVeil protection is active</string>
+    <string name="veil_service_notification_body">The veil is standing by to cover blocked apps and enforce lockdowns.</string>
 </resources>

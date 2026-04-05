@@ -1,0 +1,352 @@
+[
+  {
+    "id": 1,
+    "type": "ayah",
+    "arabic": "قُل لِّلْمُؤْمِنِينَ يَغُضُّوا مِنْ أَبْصَارِهِمْ",
+    "english": "Tell the believing men to lower their gaze.",
+    "source": "Quran 24:30"
+  },
+  {
+    "id": 2,
+    "type": "ayah",
+    "arabic": "وَقُل لِّلْمُؤْمِنَاتِ يَغْضُضْنَ مِنْ أَبْصَارِهِنَّ",
+    "english": "Tell the believing women to lower their gaze.",
+    "source": "Quran 24:31"
+  },
+  {
+    "id": 3,
+    "type": "ayah",
+    "arabic": "وَلَا تَقْرَبُوا الزِّنَىٰ إِنَّهُ كَانَ فَاحِشَةً وَسَاءَ سَبِيلًا",
+    "english": "Do not go near zina. It is a grave indecency and an evil path.",
+    "source": "Quran 17:32"
+  },
+  {
+    "id": 4,
+    "type": "ayah",
+    "arabic": "وَالَّذِينَ هُمْ لِفُرُوجِهِمْ حَافِظُونَ",
+    "english": "The believers guard their private parts.",
+    "source": "Quran 23:5"
+  },
+  {
+    "id": 5,
+    "type": "ayah",
+    "arabic": "إِلَّا عَلَىٰ أَزْوَاجِهِمْ أَوْ مَا مَلَكَتْ أَيْمَانُهُمْ",
+    "english": "They seek intimacy only through the lawful bond Allah allowed.",
+    "source": "Quran 23:6"
+  },
+  {
+    "id": 6,
+    "type": "ayah",
+    "arabic": "فَمَنِ ابْتَغَىٰ وَرَاءَ ذَٰلِكَ فَأُولَٰئِكَ هُمُ الْعَادُونَ",
+    "english": "Whoever goes beyond the lawful limit is among the transgressors.",
+    "source": "Quran 23:7"
+  },
+  {
+    "id": 7,
+    "type": "ayah",
+    "arabic": "وَالَّذِينَ هُمْ لِفُرُوجِهِمْ حَافِظُونَ",
+    "english": "Among the successful are those who guard their private parts.",
+    "source": "Quran 70:29"
+  },
+  {
+    "id": 8,
+    "type": "ayah",
+    "arabic": "إِلَّا عَلَىٰ أَزْوَاجِهِمْ أَوْ مَا مَلَكَتْ أَيْمَانُهُمْ",
+    "english": "They keep desire within what Allah made lawful for them.",
+    "source": "Quran 70:30"
+  },
+  {
+    "id": 9,
+    "type": "ayah",
+    "arabic": "فَمَنِ ابْتَغَىٰ وَرَاءَ ذَٰلِكَ فَأُولَٰئِكَ هُمُ الْعَادُونَ",
+    "english": "Seeking beyond the lawful boundary is transgression.",
+    "source": "Quran 70:31"
+  },
+  {
+    "id": 10,
+    "type": "ayah",
+    "arabic": "وَلْيَسْتَعْفِفِ الَّذِينَ لَا يَجِدُونَ نِكَاحًا",
+    "english": "Those who cannot yet marry should remain chaste.",
+    "source": "Quran 24:33"
+  },
+  {
+    "id": 11,
+    "type": "ayah",
+    "arabic": "وَالْحَافِظِينَ فُرُوجَهُمْ وَالْحَافِظَاتِ",
+    "english": "Allah praises the men and women who guard their chastity.",
+    "source": "Quran 33:35"
+  },
+  {
+    "id": 12,
+    "type": "ayah",
+    "arabic": "وَلَا يَزْنُونَ",
+    "english": "The servants of the Most Merciful do not commit zina.",
+    "source": "Quran 25:68"
+  },
+  {
+    "id": 13,
+    "type": "ayah",
+    "arabic": "إِنَّ الصَّلَاةَ تَنْهَىٰ عَنِ الْفَحْشَاءِ وَالْمُنكَرِ",
+    "english": "Prayer should pull the heart away from indecency and wrongdoing.",
+    "source": "Quran 29:45"
+  },
+  {
+    "id": 14,
+    "type": "ayah",
+    "arabic": "وَلَا تَقْرَبُوا الْفَوَاحِشَ مَا ظَهَرَ مِنْهَا وَمَا بَطَنَ",
+    "english": "Do not go near shameless deeds, whether open or hidden.",
+    "source": "Quran 6:151"
+  },
+  {
+    "id": 15,
+    "type": "ayah",
+    "arabic": "قُلْ إِنَّمَا حَرَّمَ رَبِّيَ الْفَوَاحِشَ مَا ظَهَرَ مِنْهَا وَمَا بَطَنَ",
+    "english": "Your Lord has forbidden indecency, public and private alike.",
+    "source": "Quran 7:33"
+  },
+  {
+    "id": 16,
+    "type": "ayah",
+    "arabic": "وَنَهَى النَّفْسَ عَنِ الْهَوَىٰ",
+    "english": "Success belongs to the one who restrains the soul from desire.",
+    "source": "Quran 79:40"
+  },
+  {
+    "id": 17,
+    "type": "ayah",
+    "arabic": "فَإِنَّ الْجَنَّةَ هِيَ الْمَأْوَىٰ",
+    "english": "For the one who resists low desire, Paradise is the final home.",
+    "source": "Quran 79:41"
+  },
+  {
+    "id": 18,
+    "type": "ayah",
+    "arabic": "لَوْلَا أَنْ رَأَىٰ بُرْهَانَ رَبِّهِ",
+    "english": "Yusuf was protected when he remembered the proof of his Lord.",
+    "source": "Quran 12:24"
+  },
+  {
+    "id": 19,
+    "type": "ayah",
+    "arabic": "رَبِّ السِّجْنُ أَحَبُّ إِلَيَّ مِمَّا يَدْعُونَنِي إِلَيْهِ",
+    "english": "Yusuf preferred hardship over answering the call to sin.",
+    "source": "Quran 12:33"
+  },
+  {
+    "id": 20,
+    "type": "ayah",
+    "arabic": "وَالَّذِينَ إِذَا فَعَلُوا فَاحِشَةً أَوْ ظَلَمُوا أَنْفُسَهُمْ ذَكَرُوا اللَّهَ",
+    "english": "When they slip into sin, they remember Allah and seek forgiveness.",
+    "source": "Quran 3:135"
+  },
+  {
+    "id": 21,
+    "type": "hadith",
+    "arabic": "كُتِبَ عَلَى ابْنِ آدَمَ نَصِيبُهُ مِنَ الزِّنَا",
+    "english": "The child of Adam has been warned about a share of zina that can begin before the final act.",
+    "source": "Sahih Muslim 2657a"
+  },
+  {
+    "id": 22,
+    "type": "hadith",
+    "arabic": "فَالْعَيْنَانِ زِنَاهُمَا النَّظَرُ",
+    "english": "The zina of the eyes is the forbidden look.",
+    "source": "Sahih Muslim 2657a"
+  },
+  {
+    "id": 23,
+    "type": "hadith",
+    "arabic": "وَالْأُذُنَانِ زِنَاهُمَا الِاسْتِمَاعُ",
+    "english": "The zina of the ears is to listen to what feeds desire.",
+    "source": "Sahih Muslim 2657a"
+  },
+  {
+    "id": 24,
+    "type": "hadith",
+    "arabic": "وَاللِّسَانُ زِنَاهُ الْكَلَامُ",
+    "english": "The zina of the tongue is corrupt speech.",
+    "source": "Sahih Muslim 2657a"
+  },
+  {
+    "id": 25,
+    "type": "hadith",
+    "arabic": "وَالْيَدُ زِنَاهَا الْبَطْشُ",
+    "english": "The zina of the hand is the unlawful touch or reach.",
+    "source": "Sahih Muslim 2657a"
+  },
+  {
+    "id": 26,
+    "type": "hadith",
+    "arabic": "وَالرِّجْلُ زِنَاهَا الْخُطَا",
+    "english": "The zina of the foot is to walk toward sin.",
+    "source": "Sahih Muslim 2657a"
+  },
+  {
+    "id": 27,
+    "type": "hadith",
+    "arabic": "وَالْقَلْبُ يَهْوَىٰ وَيَتَمَنَّىٰ",
+    "english": "The heart can crave and fantasize in ways that pull a person toward sin.",
+    "source": "Sahih Muslim 2657a"
+  },
+  {
+    "id": 28,
+    "type": "hadith",
+    "arabic": "وَالْفَرْجُ يُصَدِّقُ ذَٰلِكَ أَوْ يُكَذِّبُهُ",
+    "english": "The private parts either confirm that path of sin or refuse it.",
+    "source": "Sahih Muslim 2657a"
+  },
+  {
+    "id": 29,
+    "type": "hadith",
+    "arabic": "يَا مَعْشَرَ الشَّبَابِ مَنِ اسْتَطَاعَ مِنْكُمُ الْبَاءَةَ فَلْيَتَزَوَّجْ",
+    "english": "Whoever is able to marry should marry.",
+    "source": "Sahih al-Bukhari 5066"
+  },
+  {
+    "id": 30,
+    "type": "hadith",
+    "arabic": "وَمَنْ لَمْ يَسْتَطِعْ فَعَلَيْهِ بِالصَّوْمِ فَإِنَّهُ لَهُ وِجَاءٌ",
+    "english": "Whoever cannot marry should fast, because fasting weakens desire.",
+    "source": "Sahih al-Bukhari 5066"
+  },
+  {
+    "id": 31,
+    "type": "hadith",
+    "arabic": "مَنْ يَضْمَنْ لِي مَا بَيْنَ لَحْيَيْهِ وَمَا بَيْنَ رِجْلَيْهِ أَضْمَنْ لَهُ الْجَنَّةَ",
+    "english": "Whoever guards the tongue and the private parts is promised Paradise.",
+    "source": "Sahih al-Bukhari 6474"
+  },
+  {
+    "id": 32,
+    "type": "hadith",
+    "arabic": "مَا تَرَكْتُ بَعْدِي فِتْنَةً أَضَرَّ عَلَى الرِّجَالِ مِنَ النِّسَاءِ",
+    "english": "One of the hardest trials for men can be temptation through women.",
+    "source": "Sahih al-Bukhari 5096"
+  },
+  {
+    "id": 33,
+    "type": "hadith",
+    "arabic": "إِيَّاكُمْ وَالدُّخُولَ عَلَى النِّسَاءِ",
+    "english": "Beware of entering upon women in a way that opens the door to temptation.",
+    "source": "Jami' at-Tirmidhi 1171"
+  },
+  {
+    "id": 34,
+    "type": "hadith",
+    "arabic": "الْحَمْوُ الْمَوْتُ",
+    "english": "Carelessness with close non-mahram relatives can be spiritually deadly.",
+    "source": "Jami' at-Tirmidhi 1171"
+  },
+  {
+    "id": 35,
+    "type": "hadith",
+    "arabic": "لَا يَخْلُوَنَّ رَجُلٌ بِامْرَأَةٍ إِلَّا كَانَ ثَالِثَهُمَا الشَّيْطَانُ",
+    "english": "When a man is secluded with a woman, Shaytan is the third present.",
+    "source": "Mishkat al-Masabih 3118"
+  },
+  {
+    "id": 36,
+    "type": "hadith",
+    "arabic": "لَا يَنْظُرِ الرَّجُلُ إِلَى عَوْرَةِ الرَّجُلِ وَلَا الْمَرْأَةُ إِلَى عَوْرَةِ الْمَرْأَةِ",
+    "english": "Do not look at the awrah of another person.",
+    "source": "Jami' at-Tirmidhi 2793"
+  },
+  {
+    "id": 37,
+    "type": "hadith",
+    "arabic": "فَلْيَأْتِ أَهْلَهُ",
+    "english": "If desire is stirred by an unlawful glance, return to the lawful spouse.",
+    "source": "Sahih Muslim 1403a"
+  },
+  {
+    "id": 38,
+    "type": "hadith",
+    "arabic": "إِنَّ الْمَرْأَةَ تُقْبِلُ فِي صُورَةِ شَيْطَانٍ وَتُدْبِرُ فِي صُورَةِ شَيْطَانٍ",
+    "english": "Desire can dress temptation in a deceptive form, so guard the first response.",
+    "source": "Sahih Muslim 1403a"
+  },
+  {
+    "id": 39,
+    "type": "hadith",
+    "arabic": "النَّاكِحُ الَّذِي يُرِيدُ الْعَفَافَ",
+    "english": "Allah helps the person who marries seeking chastity.",
+    "source": "Jami' at-Tirmidhi 1655"
+  },
+  {
+    "id": 40,
+    "type": "hadith",
+    "arabic": "رَجُلٌ دَعَتْهُ امْرَأَةٌ ذَاتُ مَنْصِبٍ وَجَمَالٍ فَقَالَ إِنِّي أَخَافُ اللَّهَ",
+    "english": "Among the honored is the one who is tempted by beauty and status but says: I fear Allah.",
+    "source": "Sahih al-Bukhari 660"
+  },
+  {
+    "id": 41,
+    "type": "hadith",
+    "arabic": "الْحَيَاءُ شُعْبَةٌ مِنَ الْإِيمَانِ",
+    "english": "Modesty is a branch of faith.",
+    "source": "Sahih Muslim 35a"
+  },
+  {
+    "id": 42,
+    "type": "hadith",
+    "arabic": "الْحَيَاءُ لَا يَأْتِي إِلَّا بِخَيْرٍ",
+    "english": "True modesty only brings good.",
+    "source": "Sahih al-Bukhari 6117"
+  },
+  {
+    "id": 43,
+    "type": "hadith",
+    "arabic": "مَا كَانَ الْفُحْشُ فِي شَيْءٍ إِلَّا شَانَهُ",
+    "english": "Indecency stains whatever it enters.",
+    "source": "Jami' at-Tirmidhi 1974"
+  },
+  {
+    "id": 44,
+    "type": "hadith",
+    "arabic": "وَمَا كَانَ الْحَيَاءُ فِي شَيْءٍ إِلَّا زَانَهُ",
+    "english": "Modesty beautifies whatever it enters.",
+    "source": "Jami' at-Tirmidhi 1974"
+  },
+  {
+    "id": 45,
+    "type": "hadith",
+    "arabic": "دَعْهُ فَإِنَّ الْحَيَاءَ مِنَ الْإِيمَانِ",
+    "english": "Leave him, for modesty is part of faith.",
+    "source": "Sahih al-Bukhari 24"
+  },
+  {
+    "id": 46,
+    "type": "hadith",
+    "arabic": "لَا يَزْنِي الزَّانِي حِينَ يَزْنِي وَهُوَ مُؤْمِنٌ",
+    "english": "A believer is stripped of that state of faith while committing zina.",
+    "source": "Sahih Muslim 57f"
+  },
+  {
+    "id": 47,
+    "type": "hadith",
+    "arabic": "وَالتَّوْبَةُ مَعْرُوضَةٌ بَعْدُ",
+    "english": "Even after grave sin, the door of repentance is still offered.",
+    "source": "Sahih Muslim 57f"
+  },
+  {
+    "id": 48,
+    "type": "hadith",
+    "arabic": "فَاتَّقُوا الدُّنْيَا وَاتَّقُوا النِّسَاءَ",
+    "english": "Be on guard against the pull of worldly life and sexual temptation.",
+    "source": "Riyad as-Salihin 70"
+  },
+  {
+    "id": 49,
+    "type": "hadith",
+    "arabic": "فَجَعَلَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ يَصْرِفُ وَجْهَ الْفَضْلِ إِلَى الشِّقِّ الْآخَرِ",
+    "english": "The Prophet turned Al-Fadl's face away from the woman to stop the gaze.",
+    "source": "Sahih al-Bukhari 1513"
+  },
+  {
+    "id": 50,
+    "type": "hadith",
+    "arabic": "يَا عَلِيُّ لَا تُتْبِعِ النَّظْرَةَ النَّظْرَةَ فَإِنَّ لَكَ الْأُولَى وَلَيْسَتْ لَكَ الْآخِرَةُ",
+    "english": "Do not follow one glance with another. The first may be excused, but not the second.",
+    "source": "Sunan Abi Dawud 2149"
+  }
+]

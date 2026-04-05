@@ -9,14 +9,24 @@
 # Android local machine configuration
 local.properties
 
-# Gradle and Android build outputs
-build/
+# Build outputs
+*.apk
+/build/
 app/build/
 */build/
 
 # OS artifacts
 Thumbs.db
 Desktop.ini
+
+# Windows artifacts
+nul
+NUL
+
+# macOS
+.DS_Store
+
+# Design references
 stitch/
 manifests/
 UI_MOCKUPS.txt

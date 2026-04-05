@@ -24,6 +24,7 @@ plugins {
 android {
     namespace = "com.haramveil"
     compileSdk = 36
+    flavorDimensions += "distribution"
 
     defaultConfig {
         applicationId = "com.haramveil"
@@ -35,6 +36,17 @@ android {
 
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    productFlavors {
+        create("foss") {
+            dimension = "distribution"
+            buildConfigField("boolean", "INCLUDE_MLKIT", "false")
+        }
+        create("full") {
+            dimension = "distribution"
+            buildConfigField("boolean", "INCLUDE_MLKIT", "true")
         }
     }
 
@@ -61,6 +73,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 
@@ -99,7 +112,7 @@ dependencies {
 
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.24.3")
     implementation("com.google.android.gms:play-services-base:18.10.0")
-    implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
+    add("fullImplementation", "com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")
     implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("androidx.sqlite:sqlite:2.5.2")
     implementation("androidx.security:security-crypto:1.1.0")

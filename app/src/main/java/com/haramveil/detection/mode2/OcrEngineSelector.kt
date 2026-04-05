@@ -19,6 +19,7 @@
 package com.haramveil.detection.mode2
 
 import android.content.Context
+import com.haramveil.BuildConfig
 import com.haramveil.data.local.ProtectionPreferencesRepository
 import com.haramveil.data.models.ModelDownloadManager
 import com.haramveil.data.models.TextRecognitionEngine
@@ -41,17 +42,18 @@ class OcrEngineSelector(
         preferredEngine: TextRecognitionEngine? = null,
     ): OcrEngine {
         val selectedEngine = preferredEngine ?: protectionPreferencesRepository.readSettings().selectedTextEngine
+        val canUseMlKit = BuildConfig.INCLUDE_MLKIT && mlKitOcrEngine.isAvailable()
         return when (selectedEngine) {
             TextRecognitionEngine.FOSS_ONNX -> when {
                 fossOcrEngine.isAvailable() -> fossOcrEngine
-                mlKitOcrEngine.isAvailable() -> mlKitOcrEngine
+                canUseMlKit -> mlKitOcrEngine
                 else -> fossOcrEngine
             }
 
             TextRecognitionEngine.ML_KIT -> when {
-                mlKitOcrEngine.isAvailable() -> mlKitOcrEngine
+                canUseMlKit -> mlKitOcrEngine
                 fossOcrEngine.isAvailable() -> fossOcrEngine
-                else -> mlKitOcrEngine
+                else -> fossOcrEngine
             }
         }
     }

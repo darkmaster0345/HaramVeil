@@ -25,6 +25,20 @@ When risky content is confirmed, HaramVeil shows the Veil overlay, sends the use
 - Local-only app history, keyword blocklist, and lockdown state
 - FOSS-first architecture with an optional proprietary ML Kit path
 
+## Build Flavors
+
+| Flavor | ML Kit | Internet | For |
+|--------|--------|----------|-----|
+| foss | No | Never | F-Droid |
+| full | Yes (optional) | Debug only | GitHub Releases |
+
+Build commands:
+
+```bash
+./gradlew assembleFossRelease   # F-Droid APK
+./gradlew assembleFullRelease   # GitHub APK
+```
+
 ## Screenshots
 
 Screenshots will be added here for:
@@ -48,9 +62,7 @@ Screenshots will be added here for:
 ### F-Droid
 
 F-Droid metadata is included in `fastlane/metadata/android/en-US/`.
-
-Important note:
-The current codebase still contains the optional Google Play Services ML Kit dependency for the proprietary OCR path. A FOSS-only distribution flavor should be cut before a real F-Droid submission so the binary can remain fully free-software compliant.
+Use the `foss` flavor for F-Droid submission and reproducible GPL-only builds.
 
 ## Permissions Explained
 
@@ -70,8 +82,8 @@ The current codebase still contains the optional Google Play Services ML Kit dep
   Reserved from earlier setup work. Model download itself uses private app storage and should be revisited before public release.
 - `USE_BIOMETRIC`
   Reserved for future security options.
-- `INTERNET` in debug/setup path only
-  Used only for one-time optional FOSS OCR model download flow.
+- `INTERNET` in `fullDebug` only
+  Reserved for local validation of the optional model-setup path and excluded from `foss` builds.
 
 ## ONNX Model Sources
 
@@ -104,7 +116,7 @@ The app also includes a thermal guard for Mode 3. If three consecutive visual in
 
 - Android 10 is the minimum supported version.
 - Mode 2 screenshot capture requires Android 11 or newer because `takeScreenshot()` is an API 30+ accessibility capability.
-- The current repository includes an optional proprietary ML Kit dependency, so a separate FOSS-only flavor is still recommended before F-Droid submission.
+- The `full` flavor includes the optional proprietary ML Kit path; F-Droid should use the `foss` flavor.
 - The stats store is SQLCipher-backed rather than Room-backed in this branch due AGP 9 / Windows verifier issues encountered during implementation.
 - There is no iOS version.
 
@@ -120,6 +132,8 @@ Windows:
 ```powershell
 .\gradlew.bat :app:assembleDebug
 .\gradlew.bat :app:assembleRelease
+.\gradlew.bat assembleFossRelease
+.\gradlew.bat assembleFullRelease
 ```
 
 Linux/macOS:
@@ -127,6 +141,8 @@ Linux/macOS:
 ```bash
 ./gradlew :app:assembleDebug
 ./gradlew :app:assembleRelease
+./gradlew assembleFossRelease
+./gradlew assembleFullRelease
 ```
 
 ## Reproducibility Notes
@@ -137,7 +153,7 @@ For F-Droid-style reproducible builds:
 - Use JDK 17.
 - Use Android SDK platform 36 and matching build-tools.
 - Keep the release build unsigned in CI.
-- Prefer a FOSS-only release flavor before submitting to F-Droid because the optional ML Kit dependency is proprietary.
+- Submit the `foss` flavor to F-Droid and keep the `full` flavor for GitHub releases.
 
 GitHub Actions in `.github/workflows/build.yml` builds the unsigned release APK and runs unit tests on pushes to `main`.
 

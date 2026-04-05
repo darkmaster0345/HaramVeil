@@ -24,10 +24,8 @@ import android.os.Process
 import android.os.SystemClock
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.Text
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.google.android.gms.tasks.Task
+import com.haramveil.BuildConfig
 import com.haramveil.utils.DispatcherProvider
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -39,12 +37,16 @@ class MLKitOcrEngine(
     private val dispatcherProvider: DispatcherProvider = DispatcherProvider(),
 ) : OcrEngine {
     private val recognizerDelegate = lazy {
-        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        createRecognizer()
     }
     private val recognizer get() = recognizerDelegate.value
 
     override suspend fun extractText(bitmap: Bitmap): OcrResult =
         withContext(dispatcherProvider.default) {
+            if (!BuildConfig.INCLUDE_MLKIT) {
+                return@withContext OcrResult("", 0f, 0L)
+            }
+
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
 
             if (!isAvailable()) {
@@ -56,8 +58,11 @@ class MLKitOcrEngine(
             }
 
             val startedAt = SystemClock.elapsedRealtime()
-            val recognizedText = recognizer.process(InputImage.fromBitmap(bitmap, 0)).awaitResult()
-            val normalizedText = recognizedText.text
+            val activeRecognizer = recognizer ?: return@withContext OcrResult("", 0f, 0L)
+            val inputImage = createInputImage(bitmap) ?: return@withContext OcrResult("", 0f, 0L)
+            val recognizedResult = process(activeRecognizer, inputImage)?.awaitResult()
+                ?: return@withContext OcrResult("", 0f, 0L)
+            val normalizedText = extractTextValue(recognizedResult)
                 .lineSequence()
                 .map(String::trim)
                 .filter(String::isNotBlank)
@@ -71,16 +76,63 @@ class MLKitOcrEngine(
         }
 
     override fun isAvailable(): Boolean {
-        return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
+        return BuildConfig.INCLUDE_MLKIT &&
+            GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS &&
+            isMlKitRuntimePresent()
     }
 
     fun close() {
         if (recognizerDelegate.isInitialized()) {
-            recognizerDelegate.value.close()
+            runCatching {
+                recognizerDelegate.value?.javaClass?.getMethod("close")?.invoke(recognizerDelegate.value)
+            }
         }
     }
 
-    private suspend fun com.google.android.gms.tasks.Task<Text>.awaitResult(): Text =
+    private fun createRecognizer(): Any? =
+        runCatching {
+            val optionsClass = Class.forName(TextRecognizerOptionsClassName)
+            val defaultOptions = optionsClass.getField(DefaultOptionsFieldName).get(null)
+            val textRecognitionClass = Class.forName(TextRecognitionClassName)
+            textRecognitionClass.methods
+                .first { method -> method.name == GetClientMethodName && method.parameterTypes.size == 1 }
+                .invoke(null, defaultOptions)
+        }.getOrNull()
+
+    private fun createInputImage(
+        bitmap: Bitmap,
+    ): Any? =
+        runCatching {
+            val inputImageClass = Class.forName(InputImageClassName)
+            inputImageClass.getMethod(FromBitmapMethodName, Bitmap::class.java, Int::class.javaPrimitiveType!!)
+                .invoke(null, bitmap, 0)
+        }.getOrNull()
+
+    private fun process(
+        recognizer: Any,
+        inputImage: Any,
+    ): Task<*>? =
+        runCatching {
+            recognizer.javaClass.methods
+                .first { method -> method.name == ProcessMethodName && method.parameterTypes.size == 1 }
+                .invoke(recognizer, inputImage) as? Task<*>
+        }.getOrNull()
+
+    private fun extractTextValue(
+        recognizedResult: Any,
+    ): String =
+        runCatching {
+            recognizedResult.javaClass.getMethod(GetTextMethodName).invoke(recognizedResult) as? String
+        }.getOrNull().orEmpty()
+
+    private fun isMlKitRuntimePresent(): Boolean =
+        runCatching {
+            Class.forName(TextRecognitionClassName)
+            Class.forName(TextRecognizerOptionsClassName)
+            Class.forName(InputImageClassName)
+        }.isSuccess
+
+    private suspend fun Task<*>.awaitResult(): Any? =
         suspendCancellableCoroutine { continuation ->
             addOnSuccessListener { result ->
                 if (continuation.isActive) {
@@ -96,4 +148,15 @@ class MLKitOcrEngine(
                 continuation.cancel()
             }
         }
+
+    private companion object {
+        const val TextRecognitionClassName = "com.google.mlkit.vision.text.TextRecognition"
+        const val TextRecognizerOptionsClassName = "com.google.mlkit.vision.text.latin.TextRecognizerOptions"
+        const val InputImageClassName = "com.google.mlkit.vision.common.InputImage"
+        const val DefaultOptionsFieldName = "DEFAULT_OPTIONS"
+        const val GetClientMethodName = "getClient"
+        const val FromBitmapMethodName = "fromBitmap"
+        const val ProcessMethodName = "process"
+        const val GetTextMethodName = "getText"
+    }
 }

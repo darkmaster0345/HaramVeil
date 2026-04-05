@@ -28,6 +28,7 @@ import com.haramveil.data.models.ProtectionSettings
 import com.haramveil.detection.mode1.RiskLevel
 import com.haramveil.detection.mode2.Mode2Processor
 import com.haramveil.detection.mode1.UITreeScanner
+import com.haramveil.detection.mode3.Mode3Processor
 import com.haramveil.utils.DetectionBus
 import com.haramveil.utils.DetectionTriggerMode
 import com.haramveil.utils.DispatcherProvider
@@ -51,6 +52,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
     private var collectorsStarted = false
     private lateinit var throttleManager: ThrottleManager
     private lateinit var mode2Processor: Mode2Processor
+    private lateinit var mode3Processor: Mode3Processor
 
     override fun onCreate() {
         super.onCreate()
@@ -62,6 +64,13 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             buildScanTrigger(pendingEvent.packageName, pendingEvent.eventType)
         }
         mode2Processor = Mode2Processor(
+            context = applicationContext,
+            accessibilityServiceProvider = { this },
+            protectionPreferencesRepository = protectionPreferencesRepository,
+            settingsProvider = { protectionSettingsState.value },
+            dispatcherProvider = dispatcherProvider,
+        )
+        mode3Processor = Mode3Processor(
             context = applicationContext,
             accessibilityServiceProvider = { this },
             protectionPreferencesRepository = protectionPreferencesRepository,
@@ -123,6 +132,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         mode2Processor.destroy()
+        mode3Processor.destroy()
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -136,6 +146,11 @@ class HaramVeilAccessibilityService : AccessibilityService() {
                     mode2Processor.start()
                 } else {
                     mode2Processor.stop()
+                }
+                if (settings.mode3Enabled) {
+                    mode3Processor.start()
+                } else {
+                    mode3Processor.stop()
                 }
             }
         }
@@ -179,12 +194,6 @@ class HaramVeilAccessibilityService : AccessibilityService() {
                 RiskLevel.MEDIUM -> Unit
 
                 RiskLevel.HIGH -> {
-                    if (currentSettings.mode3Enabled) {
-                        DetectionBus.publishMode3Triggered(
-                            packageName = scanResult.packageName,
-                            matchDetails = matchDetails,
-                        )
-                    }
                     if (!currentSettings.mode2Enabled && !currentSettings.mode3Enabled) {
                         DetectionBus.publishVeilRequested(
                             packageName = scanResult.packageName,

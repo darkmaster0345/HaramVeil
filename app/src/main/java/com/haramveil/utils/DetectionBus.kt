@@ -60,6 +60,11 @@ sealed interface DetectionEvent {
         val matchDetails: String,
     ) : DetectionEvent
 
+    data class Mode3Clear(
+        val packageName: String,
+        val details: String,
+    ) : DetectionEvent
+
     data class VeilRequested(
         val packageName: String,
         val triggerMode: DetectionTriggerMode,
@@ -115,6 +120,18 @@ object DetectionBus {
             DetectionEvent.Mode3Triggered(
                 packageName = packageName,
                 matchDetails = matchDetails,
+            ),
+        )
+    }
+
+    fun publishMode3Clear(
+        packageName: String,
+        details: String,
+    ) {
+        _events.tryEmit(
+            DetectionEvent.Mode3Clear(
+                packageName = packageName,
+                details = details,
             ),
         )
     }

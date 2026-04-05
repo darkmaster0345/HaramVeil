@@ -75,6 +75,7 @@ fun AdvancedSettingsScreen(
     mode2Enabled: Boolean,
     mode3Enabled: Boolean,
     frameSkipIntervalMs: Int,
+    mode3InferenceIntervalMs: Int,
     topCapturePercent: Int,
     middleCapturePercent: Int,
     onBack: () -> Unit,
@@ -83,6 +84,7 @@ fun AdvancedSettingsScreen(
     onMode3Changed: (Boolean) -> Unit,
     onVisualModelSelected: (VisualModelOption) -> Unit,
     onFrameSkipIntervalChanged: (Int) -> Unit,
+    onMode3InferenceIntervalChanged: (Int) -> Unit,
     onTopCapturePercentChanged: (Int) -> Unit,
     onMiddleCapturePercentChanged: (Int) -> Unit,
     onModeOverrideChanged: (String, ModeOverrideOption) -> Unit,
@@ -233,11 +235,19 @@ fun AdvancedSettingsScreen(
                 }
                 SliderControl(
                     label = "Frame skip interval",
-                    description = "$frameSkipIntervalMs ms between visual scans",
+                    description = "$frameSkipIntervalMs ms debounce for Accessibility UI-tree scans",
                     value = frameSkipIntervalMs.toFloat(),
                     valueRange = 250f..2000f,
                     steps = 6,
                     onValueChange = { onFrameSkipIntervalChanged(it.toInt()) },
+                )
+                SliderControl(
+                    label = "Visual inference interval",
+                    description = "$mode3InferenceIntervalMs ms minimum gap between ONNX inferences",
+                    value = mode3InferenceIntervalMs.toFloat(),
+                    valueRange = 1000f..2000f,
+                    steps = 3,
+                    onValueChange = { onMode3InferenceIntervalChanged(it.toInt()) },
                 )
             }
         }
@@ -257,7 +267,7 @@ fun AdvancedSettingsScreen(
                         tint = MaterialTheme.colorScheme.secondary,
                     )
                     Text(
-                        text = "Fine-tune the top and middle capture bands before OCR and ONNX phases are wired in.",
+                        text = "Fine-tune the top and middle capture bands used by both OCR and ONNX capture paths.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

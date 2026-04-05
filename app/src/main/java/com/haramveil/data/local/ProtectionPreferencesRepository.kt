@@ -58,6 +58,8 @@ class ProtectionPreferencesRepository(
                 ),
                 frameSkipIntervalMs = preferences[HaramVeilPreferenceKeys.FrameSkipIntervalMs]
                     ?: HaramVeilPreferenceKeys.DefaultFrameSkipIntervalMs,
+                mode3InferenceIntervalMs = preferences[HaramVeilPreferenceKeys.Mode3InferenceIntervalMs]
+                    ?: HaramVeilPreferenceKeys.DefaultMode3InferenceIntervalMs,
                 topCapturePercent = (preferences[HaramVeilPreferenceKeys.TopCapturePercent]
                     ?: HaramVeilPreferenceKeys.DefaultTopCapturePercent.toLong())
                     .toInt(),
@@ -118,6 +120,13 @@ class ProtectionPreferencesRepository(
         context.haramVeilPreferencesDataStore.edit { preferences ->
             preferences[HaramVeilPreferenceKeys.FrameSkipIntervalMs] =
                 intervalMs.coerceIn(minimumValue = 250L, maximumValue = 2_000L)
+        }
+    }
+
+    suspend fun saveMode3InferenceIntervalMs(intervalMs: Long) {
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.Mode3InferenceIntervalMs] =
+                intervalMs.coerceIn(minimumValue = 1_000L, maximumValue = 2_000L)
         }
     }
 

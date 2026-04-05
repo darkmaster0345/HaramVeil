@@ -81,6 +81,8 @@ import com.haramveil.data.models.InstalledAppInfo
 import com.haramveil.data.models.ProtectionSettings
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
+import com.haramveil.detection.mode3.ModelSelectionState
+import com.haramveil.detection.mode3.ModelSelector
 import com.haramveil.ui.dashboard.DashboardRoute
 import com.haramveil.ui.dashboard.DashboardScreen
 import com.haramveil.ui.settings.AdvancedSettingsScreen
@@ -132,6 +134,12 @@ fun HaramVeilMainShell(
     val protectionPreferencesRepository = remember(context) {
         ProtectionPreferencesRepository(context.applicationContext)
     }
+    val modelSelector = remember(context, protectionPreferencesRepository) {
+        ModelSelector(
+            context = context.applicationContext,
+            protectionPreferencesRepository = protectionPreferencesRepository,
+        )
+    }
     val initialProtectionSettings = remember(
         selectedTextEngine,
         selectedVisualModel,
@@ -153,6 +161,7 @@ fun HaramVeilMainShell(
     val protectionSettings by protectionPreferencesRepository.settingsFlow.collectAsStateWithLifecycle(
         initialValue = initialProtectionSettings,
     )
+    var resolvedModelSelectionState by remember { mutableStateOf<ModelSelectionState?>(null) }
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -170,17 +179,19 @@ fun HaramVeilMainShell(
     var appConfigs by remember(initialAppConfigs) { mutableStateOf(initialAppConfigs) }
     var protectionEnabled by rememberSaveable { mutableStateOf(true) }
     val activeTextEngine = protectionSettings.selectedTextEngine
-    val activeVisualModel = protectionSettings.selectedVisualModel ?: when {
+    val activeVisualModel = resolvedModelSelectionState?.modelConfig?.visualModel ?: protectionSettings.selectedVisualModel ?: when {
         selectedVisualModel != null -> selectedVisualModel
         supports640Model -> VisualModelOption.MODEL_640
         else -> VisualModelOption.MODEL_320
     }
+    val canOffer640Model = resolvedModelSelectionState?.supports640Model ?: supports640Model
     var globalLockdownDuration by remember { mutableStateOf(LockdownDurationOption.MINUTES_15) }
     val keywordBlocklist = protectionSettings.keywordBlocklist
     val mode1OverrideEnabled = protectionSettings.mode1Enabled
     val mode2OverrideEnabled = protectionSettings.mode2Enabled
     val mode3OverrideEnabled = protectionSettings.mode3Enabled
     val frameSkipIntervalMs = protectionSettings.frameSkipIntervalMs.toFloat()
+    val mode3InferenceIntervalMs = protectionSettings.mode3InferenceIntervalMs.toFloat()
     val topCapturePercent = protectionSettings.topCapturePercent.toFloat()
     val middleCapturePercent = protectionSettings.middleCapturePercent.toFloat()
     var blockEvents by remember(initialAppConfigs) {
@@ -225,6 +236,12 @@ fun HaramVeilMainShell(
             openHaramVeilAccessibilitySettings(context)
             protectionPreferencesRepository.markAccessibilitySettingsPromptShown()
         }
+    }
+
+    LaunchedEffect(
+        protectionSettings.selectedVisualModel,
+    ) {
+        resolvedModelSelectionState = modelSelector.readSelectionState()
     }
 
     HaramVeilScreenBackground {
@@ -390,12 +407,13 @@ fun HaramVeilMainShell(
                     composable(SettingsRoute.advancedRoute) {
                         AdvancedSettingsScreen(
                             appConfigs = monitoredApps,
-                            supports640Model = supports640Model,
+                            supports640Model = canOffer640Model,
                             selectedVisualModel = activeVisualModel,
                             mode1Enabled = mode1OverrideEnabled,
                             mode2Enabled = mode2OverrideEnabled,
                             mode3Enabled = mode3OverrideEnabled,
                             frameSkipIntervalMs = frameSkipIntervalMs.toInt(),
+                            mode3InferenceIntervalMs = mode3InferenceIntervalMs.toInt(),
                             topCapturePercent = topCapturePercent.toInt(),
                             middleCapturePercent = middleCapturePercent.toInt(),
                             onBack = { navController.popBackStack() },
@@ -446,6 +464,11 @@ fun HaramVeilMainShell(
                             onFrameSkipIntervalChanged = { intervalMs ->
                                 scope.launch {
                                     protectionPreferencesRepository.saveFrameSkipIntervalMs(intervalMs.toLong())
+                                }
+                            },
+                            onMode3InferenceIntervalChanged = { intervalMs ->
+                                scope.launch {
+                                    protectionPreferencesRepository.saveMode3InferenceIntervalMs(intervalMs.toLong())
                                 }
                             },
                             onTopCapturePercentChanged = { percent ->

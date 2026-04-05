@@ -27,11 +27,11 @@ import com.haramveil.data.local.OnboardingPreferencesRepository
 import com.haramveil.data.models.BenchmarkResult
 import com.haramveil.data.models.InstalledAppInfo
 import com.haramveil.data.models.SecurityQuestion
-import com.haramveil.data.models.StoredSecurityQuestion
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
 import com.haramveil.detection.mode3.OnnxBenchmarkRunner
-import com.haramveil.security.PinSecurityStore
+import com.haramveil.security.PinManager
+import com.haramveil.security.SecurityQuestionsManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
 
 data class BenchmarkUiState(
     val isRunning: Boolean = false,
@@ -88,7 +87,8 @@ class OnboardingViewModel(
 
     private val applicationContext = application.applicationContext
     private val repository = OnboardingPreferencesRepository(applicationContext)
-    private val pinSecurityStore = PinSecurityStore(applicationContext)
+    private val pinManager = PinManager(applicationContext)
+    private val securityQuestionsManager = SecurityQuestionsManager(applicationContext)
     private val benchmarkRunner = OnnxBenchmarkRunner(applicationContext)
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -203,16 +203,9 @@ class OnboardingViewModel(
         securityAnswers: List<Pair<SecurityQuestion, Boolean>>,
     ) {
         withContext(Dispatchers.IO) {
-            pinSecurityStore.storePin(pin)
+            pinManager.storePIN(pin)
         }
-        repository.saveSecurityQuestions(
-            questions = securityAnswers.map { (question, answer) ->
-                StoredSecurityQuestion(
-                    questionId = question.id,
-                    answerHash = sha256Hash("${question.id}:${answer.toString().lowercase()}"),
-                )
-            },
-        )
+        securityQuestionsManager.storeConfiguredQuestions(securityAnswers)
         _uiState.update { current ->
             current.copy(
                 hasPinConfigured = true,
@@ -273,7 +266,7 @@ class OnboardingViewModel(
                 installedApps = installedApps,
                 selectedPackages = selectedPackages,
                 appSelectionSaved = snapshot.appSelectionSaved,
-                hasPinConfigured = pinSecurityStore.hasPin(),
+                hasPinConfigured = pinManager.isSet(),
                 securitySetupSaved = snapshot.securitySetupSaved,
             )
 
@@ -430,12 +423,6 @@ class OnboardingViewModel(
                 errorMessage = errorMessage,
             )
         }
-
-    private fun sha256Hash(rawValue: String): String =
-        MessageDigest.getInstance("SHA-256")
-            .digest(rawValue.toByteArray())
-            .joinToString(separator = "") { byte -> "%02x".format(byte) }
-
     private data class ModeSelection(
         val mode1Enabled: Boolean,
         val mode2Enabled: Boolean,

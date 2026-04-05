@@ -51,7 +51,6 @@ import com.haramveil.ui.HaramVeilSectionCard
 import com.haramveil.ui.HaramVeilWordmarkHeader
 import com.haramveil.ui.InstalledAppIcon
 import com.haramveil.ui.ModeBadge
-import com.haramveil.ui.PlaceholderPinDialog
 import com.haramveil.ui.SectionLabel
 import com.haramveil.ui.StatusPill
 import java.time.format.DateTimeFormatter
@@ -68,11 +67,10 @@ fun DashboardScreen(
     activeLockdowns: List<ActiveLockdownUiModel>,
     recentEvents: List<BlockEventUiModel>,
     onProtectionEnabledChange: (Boolean) -> Unit,
+    onRequestProtectionDisable: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
     onViewFullStats: () -> Unit,
 ) {
-    var showPinDialog by remember { mutableStateOf(false) }
-
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -125,7 +123,7 @@ fun DashboardScreen(
                                 if (shouldEnable) {
                                     onProtectionEnabledChange(true)
                                 } else {
-                                    showPinDialog = true
+                                    onRequestProtectionDisable()
                                 }
                             },
                         )
@@ -247,19 +245,6 @@ fun DashboardScreen(
                 }
             }
         }
-    }
-
-    if (showPinDialog) {
-        PlaceholderPinDialog(
-            title = "Turn protection off?",
-            message = "A PIN gate belongs here so HaramVeil cannot be disabled casually or in a weak moment.",
-            confirmLabel = "Turn Off",
-            onDismiss = { showPinDialog = false },
-            onConfirm = {
-                showPinDialog = false
-                onProtectionEnabledChange(false)
-            },
-        )
     }
 }
 

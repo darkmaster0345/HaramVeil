@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Lock
@@ -83,11 +82,16 @@ import com.haramveil.data.models.VisualModelOption
 import com.haramveil.detection.mode3.ModelSelectionState
 import com.haramveil.detection.mode3.ModelSelector
 import com.haramveil.security.AppLockdownManager
+import com.haramveil.security.PinManager
+import com.haramveil.security.SecurityQuestionsManager
 import com.haramveil.ui.dashboard.DashboardRoute
 import com.haramveil.ui.dashboard.DashboardScreen
 import com.haramveil.ui.settings.AdvancedSettingsScreen
 import com.haramveil.ui.settings.SettingsRoute
 import com.haramveil.ui.settings.SettingsScreen
+import com.haramveil.ui.security.ChangePINScreen
+import com.haramveil.ui.security.PinActionGateDialog
+import com.haramveil.ui.security.PinGateComposable
 import com.haramveil.ui.stats.StatsRoute
 import com.haramveil.ui.stats.StatsScreen
 import kotlinx.coroutines.delay
@@ -117,6 +121,11 @@ private enum class MainDestination(
     ),
 }
 
+private enum class SensitiveAction {
+    DISABLE_PROTECTION,
+    CLEAR_HISTORY,
+}
+
 @Composable
 fun HaramVeilMainShell(
     selectedTextEngine: TextRecognitionEngine,
@@ -136,6 +145,12 @@ fun HaramVeilMainShell(
     }
     val appLockdownManager = remember(context) {
         AppLockdownManager(context.applicationContext)
+    }
+    val pinManager = remember(context) {
+        PinManager(context.applicationContext)
+    }
+    val securityQuestionsManager = remember(context) {
+        SecurityQuestionsManager(context.applicationContext)
     }
     val modelSelector = remember(context, protectionPreferencesRepository) {
         ModelSelector(
@@ -181,6 +196,8 @@ fun HaramVeilMainShell(
     }
     var appConfigs by remember(initialAppConfigs) { mutableStateOf(initialAppConfigs) }
     var protectionEnabled by rememberSaveable { mutableStateOf(true) }
+    var settingsUnlocked by rememberSaveable { mutableStateOf(false) }
+    var pendingSensitiveAction by remember { mutableStateOf<SensitiveAction?>(null) }
     val activeTextEngine = protectionSettings.selectedTextEngine
     val activeVisualModel = resolvedModelSelectionState?.modelConfig?.visualModel ?: protectionSettings.selectedVisualModel ?: when {
         selectedVisualModel != null -> selectedVisualModel
@@ -237,7 +254,9 @@ fun HaramVeilMainShell(
         }
     }
     val selectedBottomDestination = when (currentRoute) {
-        SettingsRoute.advancedRoute -> MainDestination.Settings.route
+        SettingsRoute.advancedRoute,
+        SettingsRoute.changePinRoute,
+        -> MainDestination.Settings.route
         else -> currentRoute
     }
 
@@ -360,6 +379,9 @@ fun HaramVeilMainShell(
                             onProtectionEnabledChange = { shouldEnable ->
                                 protectionEnabled = shouldEnable
                             },
+                            onRequestProtectionDisable = {
+                                pendingSensitiveAction = SensitiveAction.DISABLE_PROTECTION
+                            },
                             onOpenAccessibilitySettings = {
                                 openHaramVeilAccessibilitySettings(context)
                             },
@@ -377,169 +399,215 @@ fun HaramVeilMainShell(
                             thisWeekCount = blockCounts.thisWeek,
                             allTimeCount = blockCounts.allTime,
                             mostBlockedApp = mostBlockedApp,
-                            onClearHistoryConfirmed = {
-                                blockEvents = emptyList()
+                            onRequestClearHistory = {
+                                pendingSensitiveAction = SensitiveAction.CLEAR_HISTORY
                             },
                         )
                     }
                     composable(SettingsRoute.route) {
-                        SettingsScreen(
-                            monitoredApps = appConfigs,
-                            selectedEngine = activeTextEngine,
-                            globalLockdownDuration = globalLockdownDuration,
-                            keywordBlocklist = keywordBlocklist,
-                            deviceAdminEnabled = true,
-                            onOpenAdvancedSettings = {
-                                navController.navigate(SettingsRoute.advancedRoute)
+                        PinGateComposable(
+                            authenticated = settingsUnlocked,
+                            pinManager = pinManager,
+                            securityQuestionsManager = securityQuestionsManager,
+                            title = "Enter your PIN to open Settings",
+                            subtitle = "HaramVeil protects its settings behind the same local PIN that guards disabling protection and clearing history.",
+                            onAuthenticated = {
+                                settingsUnlocked = true
                             },
-                            onEngineSelected = { engine ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveModeConfiguration(
-                                        textEngine = engine,
-                                        visualModel = activeVisualModel,
-                                        mode1Enabled = mode1OverrideEnabled,
-                                        mode2Enabled = mode2OverrideEnabled,
-                                        mode3Enabled = mode3OverrideEnabled,
-                                    )
-                                }
-                            },
-                            onMonitoredAppsUpdated = { selectedPackageNames ->
-                                appConfigs = appConfigs.map { config ->
-                                    config.copy(isMonitored = config.app.packageName in selectedPackageNames)
-                                }
-                                scope.launch {
-                                    protectionPreferencesRepository.saveMonitoredPackages(selectedPackageNames)
-                                }
-                            },
-                            onKeywordAdded = { keyword ->
-                                if (keyword.isNotBlank() && keyword !in keywordBlocklist) {
+                        ) {
+                            SettingsScreen(
+                                monitoredApps = appConfigs,
+                                selectedEngine = activeTextEngine,
+                                globalLockdownDuration = globalLockdownDuration,
+                                keywordBlocklist = keywordBlocklist,
+                                deviceAdminEnabled = true,
+                                onOpenAdvancedSettings = {
+                                    navController.navigate(SettingsRoute.advancedRoute)
+                                },
+                                onOpenChangePin = {
+                                    navController.navigate(SettingsRoute.changePinRoute)
+                                },
+                                onEngineSelected = { engine ->
                                     scope.launch {
-                                        protectionPreferencesRepository.saveKeywordBlocklist(
-                                            keywordBlocklist + keyword,
+                                        protectionPreferencesRepository.saveModeConfiguration(
+                                            textEngine = engine,
+                                            visualModel = activeVisualModel,
+                                            mode1Enabled = mode1OverrideEnabled,
+                                            mode2Enabled = mode2OverrideEnabled,
+                                            mode3Enabled = mode3OverrideEnabled,
                                         )
                                     }
-                                }
-                            },
-                            onKeywordRemoved = { keyword ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveKeywordBlocklist(
-                                        keywordBlocklist - keyword,
-                                    )
-                                }
-                            },
-                            onLockdownDurationSelected = { duration ->
-                                scope.launch {
-                                    val persistedDurationMs = when (duration) {
-                                        LockdownDurationOption.CUSTOM -> LockdownDurationOption.DefaultCustomDurationMs
-                                        else -> duration.toDurationMs(protectionSettings.lockdownDurationMs)
+                                },
+                                onMonitoredAppsUpdated = { selectedPackageNames ->
+                                    appConfigs = appConfigs.map { config ->
+                                        config.copy(isMonitored = config.app.packageName in selectedPackageNames)
                                     }
-                                    protectionPreferencesRepository.saveLockdownDurationMs(persistedDurationMs)
-                                }
-                            },
-                        )
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveMonitoredPackages(selectedPackageNames)
+                                    }
+                                },
+                                onKeywordAdded = { keyword ->
+                                    if (keyword.isNotBlank() && keyword !in keywordBlocklist) {
+                                        scope.launch {
+                                            protectionPreferencesRepository.saveKeywordBlocklist(
+                                                keywordBlocklist + keyword,
+                                            )
+                                        }
+                                    }
+                                },
+                                onKeywordRemoved = { keyword ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveKeywordBlocklist(
+                                            keywordBlocklist - keyword,
+                                        )
+                                    }
+                                },
+                                onLockdownDurationSelected = { duration ->
+                                    scope.launch {
+                                        val persistedDurationMs = when (duration) {
+                                            LockdownDurationOption.CUSTOM -> LockdownDurationOption.DefaultCustomDurationMs
+                                            else -> duration.toDurationMs(protectionSettings.lockdownDurationMs)
+                                        }
+                                        protectionPreferencesRepository.saveLockdownDurationMs(persistedDurationMs)
+                                    }
+                                },
+                            )
+                        }
                     }
                     composable(SettingsRoute.advancedRoute) {
-                        AdvancedSettingsScreen(
-                            appConfigs = monitoredApps,
-                            supports640Model = canOffer640Model,
-                            selectedVisualModel = activeVisualModel,
-                            mode1Enabled = mode1OverrideEnabled,
-                            mode2Enabled = mode2OverrideEnabled,
-                            mode3Enabled = mode3OverrideEnabled,
-                            frameSkipIntervalMs = frameSkipIntervalMs.toInt(),
-                            mode3InferenceIntervalMs = mode3InferenceIntervalMs.toInt(),
-                            topCapturePercent = topCapturePercent.toInt(),
-                            middleCapturePercent = middleCapturePercent.toInt(),
-                            onBack = { navController.popBackStack() },
-                            onMode1Changed = { enabled ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveModeConfiguration(
-                                        textEngine = activeTextEngine,
-                                        visualModel = activeVisualModel,
-                                        mode1Enabled = enabled,
-                                        mode2Enabled = mode2OverrideEnabled,
-                                        mode3Enabled = mode3OverrideEnabled,
-                                    )
-                                }
+                        PinGateComposable(
+                            authenticated = settingsUnlocked,
+                            pinManager = pinManager,
+                            securityQuestionsManager = securityQuestionsManager,
+                            title = "Enter your PIN to open Advanced Settings",
+                            subtitle = "Advanced controls can weaken or strengthen protection, so HaramVeil keeps them behind the same local PIN gate.",
+                            onAuthenticated = {
+                                settingsUnlocked = true
                             },
-                            onMode2Changed = { enabled ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveModeConfiguration(
-                                        textEngine = activeTextEngine,
-                                        visualModel = activeVisualModel,
-                                        mode1Enabled = mode1OverrideEnabled,
-                                        mode2Enabled = enabled,
-                                        mode3Enabled = mode3OverrideEnabled,
-                                    )
-                                }
-                            },
-                            onMode3Changed = { enabled ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveModeConfiguration(
-                                        textEngine = activeTextEngine,
-                                        visualModel = activeVisualModel,
-                                        mode1Enabled = mode1OverrideEnabled,
-                                        mode2Enabled = mode2OverrideEnabled,
-                                        mode3Enabled = enabled,
-                                    )
-                                }
-                            },
-                            onVisualModelSelected = { model ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveModeConfiguration(
-                                        textEngine = activeTextEngine,
-                                        visualModel = model,
-                                        mode1Enabled = mode1OverrideEnabled,
-                                        mode2Enabled = mode2OverrideEnabled,
-                                        mode3Enabled = mode3OverrideEnabled,
-                                    )
-                                }
-                            },
-                            onFrameSkipIntervalChanged = { intervalMs ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveFrameSkipIntervalMs(intervalMs.toLong())
-                                }
-                            },
-                            onMode3InferenceIntervalChanged = { intervalMs ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveMode3InferenceIntervalMs(intervalMs.toLong())
-                                }
-                            },
-                            onTopCapturePercentChanged = { percent ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveHaramClipConfiguration(
-                                        topCapturePercent = percent,
-                                        middleCapturePercent = protectionSettings.middleCapturePercent,
-                                    )
-                                }
-                            },
-                            onMiddleCapturePercentChanged = { percent ->
-                                scope.launch {
-                                    protectionPreferencesRepository.saveHaramClipConfiguration(
-                                        topCapturePercent = protectionSettings.topCapturePercent,
-                                        middleCapturePercent = percent,
-                                    )
-                                }
-                            },
-                            onModeOverrideChanged = { packageName, option ->
-                                appConfigs = appConfigs.map { config ->
-                                    if (config.app.packageName == packageName) {
-                                        config.copy(modeOverride = option)
-                                    } else {
-                                        config
+                        ) {
+                            AdvancedSettingsScreen(
+                                appConfigs = monitoredApps,
+                                supports640Model = canOffer640Model,
+                                selectedVisualModel = activeVisualModel,
+                                mode1Enabled = mode1OverrideEnabled,
+                                mode2Enabled = mode2OverrideEnabled,
+                                mode3Enabled = mode3OverrideEnabled,
+                                frameSkipIntervalMs = frameSkipIntervalMs.toInt(),
+                                mode3InferenceIntervalMs = mode3InferenceIntervalMs.toInt(),
+                                topCapturePercent = topCapturePercent.toInt(),
+                                middleCapturePercent = middleCapturePercent.toInt(),
+                                onBack = { navController.popBackStack() },
+                                onMode1Changed = { enabled ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveModeConfiguration(
+                                            textEngine = activeTextEngine,
+                                            visualModel = activeVisualModel,
+                                            mode1Enabled = enabled,
+                                            mode2Enabled = mode2OverrideEnabled,
+                                            mode3Enabled = mode3OverrideEnabled,
+                                        )
                                     }
-                                }
-                            },
-                            onLockdownOverrideChanged = { packageName, option ->
-                                appConfigs = appConfigs.map { config ->
-                                    if (config.app.packageName == packageName) {
-                                        config.copy(lockdownOverride = option)
-                                    } else {
-                                        config
+                                },
+                                onMode2Changed = { enabled ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveModeConfiguration(
+                                            textEngine = activeTextEngine,
+                                            visualModel = activeVisualModel,
+                                            mode1Enabled = mode1OverrideEnabled,
+                                            mode2Enabled = enabled,
+                                            mode3Enabled = mode3OverrideEnabled,
+                                        )
                                     }
-                                }
+                                },
+                                onMode3Changed = { enabled ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveModeConfiguration(
+                                            textEngine = activeTextEngine,
+                                            visualModel = activeVisualModel,
+                                            mode1Enabled = mode1OverrideEnabled,
+                                            mode2Enabled = mode2OverrideEnabled,
+                                            mode3Enabled = enabled,
+                                        )
+                                    }
+                                },
+                                onVisualModelSelected = { model ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveModeConfiguration(
+                                            textEngine = activeTextEngine,
+                                            visualModel = model,
+                                            mode1Enabled = mode1OverrideEnabled,
+                                            mode2Enabled = mode2OverrideEnabled,
+                                            mode3Enabled = mode3OverrideEnabled,
+                                        )
+                                    }
+                                },
+                                onFrameSkipIntervalChanged = { intervalMs ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveFrameSkipIntervalMs(intervalMs.toLong())
+                                    }
+                                },
+                                onMode3InferenceIntervalChanged = { intervalMs ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveMode3InferenceIntervalMs(intervalMs.toLong())
+                                    }
+                                },
+                                onTopCapturePercentChanged = { percent ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveHaramClipConfiguration(
+                                            topCapturePercent = percent,
+                                            middleCapturePercent = protectionSettings.middleCapturePercent,
+                                        )
+                                    }
+                                },
+                                onMiddleCapturePercentChanged = { percent ->
+                                    scope.launch {
+                                        protectionPreferencesRepository.saveHaramClipConfiguration(
+                                            topCapturePercent = protectionSettings.topCapturePercent,
+                                            middleCapturePercent = percent,
+                                        )
+                                    }
+                                },
+                                onModeOverrideChanged = { packageName, option ->
+                                    appConfigs = appConfigs.map { config ->
+                                        if (config.app.packageName == packageName) {
+                                            config.copy(modeOverride = option)
+                                        } else {
+                                            config
+                                        }
+                                    }
+                                },
+                                onLockdownOverrideChanged = { packageName, option ->
+                                    appConfigs = appConfigs.map { config ->
+                                        if (config.app.packageName == packageName) {
+                                            config.copy(lockdownOverride = option)
+                                        } else {
+                                            config
+                                        }
+                                    }
+                                },
+                            )
+                        }
+                    }
+                    composable(SettingsRoute.changePinRoute) {
+                        PinGateComposable(
+                            authenticated = settingsUnlocked,
+                            pinManager = pinManager,
+                            securityQuestionsManager = securityQuestionsManager,
+                            title = "Enter your PIN to manage security",
+                            subtitle = "Changing the PIN starts from a protected settings route, then asks you to verify the current PIN again before saving a new one.",
+                            onAuthenticated = {
+                                settingsUnlocked = true
                             },
-                        )
+                        ) {
+                            ChangePINScreen(
+                                pinManager = pinManager,
+                                securityQuestionsManager = securityQuestionsManager,
+                                onBack = { navController.popBackStack() },
+                                onPinChanged = {
+                                    navController.popBackStack()
+                                },
+                            )
+                        }
                     }
                 }
 
@@ -583,6 +651,33 @@ fun HaramVeilMainShell(
                         }
                     }
                 }
+
+                PinActionGateDialog(
+                    visible = pendingSensitiveAction != null,
+                    pinManager = pinManager,
+                    securityQuestionsManager = securityQuestionsManager,
+                    title = when (pendingSensitiveAction) {
+                        SensitiveAction.DISABLE_PROTECTION -> "Enter your PIN to turn protection off"
+                        SensitiveAction.CLEAR_HISTORY -> "Enter your PIN to clear history"
+                        null -> ""
+                    },
+                    subtitle = when (pendingSensitiveAction) {
+                        SensitiveAction.DISABLE_PROTECTION -> "HaramVeil asks for the local PIN before protection can be paused, even for a moment."
+                        SensitiveAction.CLEAR_HISTORY -> "Clearing local block history is protected so it cannot be wiped casually or impulsively."
+                        null -> ""
+                    },
+                    onDismiss = {
+                        pendingSensitiveAction = null
+                    },
+                    onAuthenticated = {
+                        when (pendingSensitiveAction) {
+                            SensitiveAction.DISABLE_PROTECTION -> protectionEnabled = false
+                            SensitiveAction.CLEAR_HISTORY -> blockEvents = emptyList()
+                            null -> Unit
+                        }
+                        pendingSensitiveAction = null
+                    },
+                )
             }
         }
     }

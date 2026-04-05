@@ -54,7 +54,6 @@ import com.haramveil.ui.HaramVeilWordmarkHeader
 import com.haramveil.ui.InstalledAppIcon
 import com.haramveil.ui.ModeBadge
 import com.haramveil.ui.MostBlockedAppUiModel
-import com.haramveil.ui.PlaceholderPinDialog
 import com.haramveil.ui.SectionLabel
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -66,10 +65,9 @@ fun StatsScreen(
     thisWeekCount: Int,
     allTimeCount: Int,
     mostBlockedApp: MostBlockedAppUiModel?,
-    onClearHistoryConfirmed: () -> Unit,
+    onRequestClearHistory: () -> Unit,
 ) {
     var selectedFilter by remember { mutableStateOf<BlockDetectionMode?>(null) }
-    var showPinDialog by remember { mutableStateOf(false) }
     val filteredEvents = remember(events, selectedFilter) {
         events.filter { selectedFilter == null || it.mode == selectedFilter }
     }
@@ -213,7 +211,7 @@ fun StatsScreen(
         }
         item {
             OutlinedButton(
-                onClick = { showPinDialog = true },
+                onClick = onRequestClearHistory,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 6.dp),
@@ -230,19 +228,6 @@ fun StatsScreen(
                 )
             }
         }
-    }
-
-    if (showPinDialog) {
-        PlaceholderPinDialog(
-            title = "Clear activity history?",
-            message = "A PIN confirmation belongs here so the log cannot be wiped casually. This will only clear the local preview data for now.",
-            confirmLabel = "Clear",
-            onDismiss = { showPinDialog = false },
-            onConfirm = {
-                showPinDialog = false
-                onClearHistoryConfirmed()
-            },
-        )
     }
 }
 

@@ -111,11 +111,11 @@ import com.haramveil.accessibility.openHaramVeilAccessibilitySettings
 import com.haramveil.data.models.InstalledAppInfo
 import com.haramveil.data.models.PermissionReviewState
 import com.haramveil.data.models.SecurityQuestion
-import com.haramveil.data.models.SecurityQuestionCatalog
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
 import com.haramveil.overlay.VeilOverlayController
 import com.haramveil.security.HaramVeilDeviceAdminReceiver
+import com.haramveil.security.SecurityQuestionsManager
 import com.haramveil.ui.HaramVeilMainShell
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -607,6 +607,10 @@ private fun AppSelectionScreen(
 private fun PinSetupScreen(
     onContinue: (String, List<Pair<SecurityQuestion, Boolean>>) -> Unit,
 ) {
+    val context = LocalContext.current
+    val questionCatalog = remember(context) {
+        SecurityQuestionsManager(context.applicationContext).questionCatalog()
+    }
     var createdPin by rememberSaveable { mutableStateOf("") }
     var confirmPin by rememberSaveable { mutableStateOf("") }
     var pinStage by rememberSaveable { mutableStateOf("create") }
@@ -631,7 +635,7 @@ private fun PinSetupScreen(
             Button(
                 onClick = {
                     val answers = selectedQuestionIds.zip(selectedAnswers).mapNotNull { (questionId, answerValue) ->
-                        val question = SecurityQuestionCatalog.byId(questionId)
+                        val question = questionCatalog.firstOrNull { it.id == questionId }
                         val answer = when (answerValue) {
                             1 -> true
                             0 -> false
@@ -748,6 +752,7 @@ private fun PinSetupScreen(
 
             if (pinConfirmed) {
                 SecurityQuestionSection(
+                    questionCatalog = questionCatalog,
                     selectedQuestionIds = selectedQuestionIds,
                     selectedAnswers = selectedAnswers,
                     activeDropdownSlot = activeDropdownSlot,
@@ -772,6 +777,7 @@ private fun PinSetupScreen(
 
 @Composable
 private fun SecurityQuestionSection(
+    questionCatalog: List<SecurityQuestion>,
     selectedQuestionIds: List<String>,
     selectedAnswers: List<Int>,
     activeDropdownSlot: Int,
@@ -802,7 +808,7 @@ private fun SecurityQuestionSection(
             )
             repeat(3) { slot ->
                 val selectedQuestionId = selectedQuestionIds[slot]
-                val selectedQuestion = SecurityQuestionCatalog.byId(selectedQuestionId)
+                val selectedQuestion = questionCatalog.firstOrNull { it.id == selectedQuestionId }
                 val usedQuestionIds = selectedQuestionIds.filterIndexed { index, id ->
                     index != slot && id.isNotBlank()
                 }.toSet()
@@ -827,7 +833,7 @@ private fun SecurityQuestionSection(
                         expanded = activeDropdownSlot == slot,
                         onDismissRequest = { onDropdownChanged(slot) },
                     ) {
-                        SecurityQuestionCatalog.questions.forEach { question ->
+                        questionCatalog.forEach { question ->
                             DropdownMenuItem(
                                 text = { Text(question.prompt) },
                                 enabled = question.id !in usedQuestionIds,

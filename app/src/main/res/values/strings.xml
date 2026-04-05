@@ -7,4 +7,15 @@
     <string name="veil_service_channel_description">Keeps the veil overlay ready to respond when HaramVeil blocks content.</string>
     <string name="veil_service_notification_title">HaramVeil protection is active</string>
     <string name="veil_service_notification_body">The veil is standing by to cover blocked apps and enforce lockdowns.</string>
+
+    <string name="security_question_first_school_karachi">Was your first school in Karachi?</string>
+    <string name="security_question_older_sibling">Do you have a sibling older than you?</string>
+    <string name="security_question_father_name_m">Is your father\'s name starting with the letter M?</string>
+    <string name="security_question_dae_first_year">Did you complete your first year of DAE?</string>
+    <string name="security_question_wear_glasses">Do you wear glasses?</string>
+    <string name="security_question_same_birth_city">Were you born in the same city where you live now?</string>
+    <string name="security_question_bike_before_ten">Did you learn to ride a bicycle before age 10?</string>
+    <string name="security_question_left_handed_family_member">Do you have a left-handed family member?</string>
+    <string name="security_question_first_friend_neighborhood">Was your first close friend from your neighborhood?</string>
+    <string name="security_question_memorized_surah_before_twelve">Did you memorize a surah before age 12?</string>
 </resources>

@@ -19,41 +19,15 @@
 package com.haramveil.security
 
 import android.content.Context
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
-import at.favre.lib.crypto.bcrypt.BCrypt
 
 class PinSecurityStore(
     context: Context,
 ) {
+    private val pinManager = PinManager(context)
 
-    private val applicationContext = context.applicationContext
-    private val encryptedPreferences by lazy {
-        val masterKey = MasterKey.Builder(applicationContext)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        EncryptedSharedPreferences.create(
-            applicationContext,
-            PreferenceFileName,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
-    }
-
-    fun hasPin(): Boolean = encryptedPreferences.contains(PinHashKey)
+    fun hasPin(): Boolean = pinManager.isSet()
 
     fun storePin(pin: String) {
-        val bcryptHash = BCrypt.withDefaults().hashToString(BcryptCost, pin.toCharArray())
-        encryptedPreferences.edit()
-            .putString(PinHashKey, bcryptHash)
-            .apply()
-    }
-
-    private companion object {
-        const val PreferenceFileName = "haramveil_secure_state"
-        const val PinHashKey = "pin_bcrypt_hash"
-        const val BcryptCost = 12
+        pinManager.storePIN(pin)
     }
 }

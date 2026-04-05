@@ -82,6 +82,7 @@ fun SettingsScreen(
     keywordBlocklist: List<String>,
     deviceAdminEnabled: Boolean,
     onOpenAdvancedSettings: () -> Unit,
+    onOpenChangePin: () -> Unit,
     onEngineSelected: (TextRecognitionEngine) -> Unit,
     onMonitoredAppsUpdated: (Set<String>) -> Unit,
     onKeywordAdded: (String) -> Unit,
@@ -114,7 +115,7 @@ fun SettingsScreen(
         item {
             HaramVeilWordmarkHeader(
                 title = "Settings",
-                subtitle = "Tune protection coverage, lockdown behavior, and future security controls without touching any live detection logic yet.",
+                subtitle = "Tune protection coverage, lockdown behavior, and the local security controls that guard HaramVeil itself.",
             )
         }
         item {
@@ -233,17 +234,15 @@ fun SettingsScreen(
             HaramVeilSectionCard {
                 SettingsActionRow(
                     title = "Change PIN",
-                    supporting = "Reserved for Phase 8 secure flow",
-                    onClick = {
-                        infoDialogMessage = "PIN change UI is intentionally a placeholder right now. Phase 8 will wire it to encrypted storage and brute-force lockout rules."
-                    },
+                    supporting = "Verify the current PIN, then save a new bcrypt hash",
+                    onClick = onOpenChangePin,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
                 SettingsActionRow(
                     title = "Change Security Questions",
-                    supporting = "Reserved for Phase 8 secure flow",
+                    supporting = "Your recovery answers stay hashed only. Rotation will follow the same secure flow.",
                     onClick = {
-                        infoDialogMessage = "Security question rotation is queued for the PIN and recovery phase so it can share the same locked flow."
+                        infoDialogMessage = "Recovery question rotation is not fully separate yet. Today, the forgot-PIN flow can still reset the PIN securely using the questions already saved on-device."
                     },
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))

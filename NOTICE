@@ -1,0 +1,50 @@
+HaramVeil includes or links against the following notable third-party components.
+
+1. ONNX Runtime Android
+   Artifact: com.microsoft.onnxruntime:onnxruntime-android
+   License: MIT
+   Upstream: https://github.com/microsoft/onnxruntime
+   Compatibility note: GPLv3-compatible.
+
+2. Google Play Services ML Kit Text Recognition
+   Artifact: com.google.android.gms:play-services-mlkit-text-recognition
+   License status: distributed under Google Play Services / ML Kit terms, not an open-source Apache-2.0 AndroidX-style library
+   Upstream: https://developers.google.com/ml-kit
+   Compatibility note: this optional proprietary dependency should be excluded from a true F-Droid build. Recommended replacement for fully free-software distribution: ship the FOSS ONNX OCR path only.
+
+3. AndroidX Core, Lifecycle, Navigation, Compose, WorkManager, DataStore, Security Crypto, SQLite
+   License: Apache License 2.0
+   Upstream: https://developer.android.com/jetpack/androidx
+   Compatibility note: Apache-2.0 is GPLv3-compatible.
+
+4. Coil
+   Artifact: io.coil-kt:coil-compose
+   License: Apache License 2.0
+   Upstream: https://github.com/coil-kt/coil
+   Compatibility note: GPLv3-compatible.
+
+5. Bcrypt library
+   Artifact: at.favre.lib:bcrypt
+   License: Apache License 2.0
+   Upstream: https://github.com/patrickfav/bcrypt
+   Compatibility note: GPLv3-compatible.
+   Additional note: this project does not currently use jBCrypt; earlier planning notes that mentioned jBCrypt no longer match the actual dependency tree.
+
+6. SQLCipher for Android
+   Artifact: net.zetetic:android-database-sqlcipher
+   License: BSD-style / SQLCipher permissive license family
+   Upstream: https://github.com/sqlcipher/android-database-sqlcipher
+   Compatibility note: permissive and generally GPLv3-compatible.
+   Additional note: upstream has deprecated this artifact in favor of sqlcipher-android. Migration is recommended before broader distribution.
+
+7. NudeNet source repository
+   Source: https://github.com/notAI-tech/NudeNet
+   Repository license: AGPL-3.0
+   Weights used here: https://github.com/notAI-tech/NudeNet/releases/tag/v3.4-weights
+   Important note: the v3.4 weight release metadata does not publish a separate weight-file license text. Redistribution of the bundled weight files should be manually verified before F-Droid or other third-party distribution.
+
+Summary of license compatibility for this repository:
+
+- MIT, Apache-2.0, and BSD-style dependencies used here are generally compatible with GPLv3 distribution.
+- The optional ML Kit dependency is the main release-compliance concern because it is proprietary and not suitable for a pure-FOSS F-Droid binary.
+- The NudeNet repo license is visible upstream, but the bundled weight-file redistribution terms remain unclear and should be reviewed before public binary redistribution.

@@ -260,6 +260,7 @@ fun HaramVeilMainShell(
         }
     }
     val storedBlockEvents by statsRepository.allEvents.collectAsStateWithLifecycle(initialValue = emptyList())
+    val statsLoaded by statsRepository.hasLoadedSnapshot.collectAsStateWithLifecycle(initialValue = false)
     val todayCount by statsRepository.todayCount.collectAsStateWithLifecycle(initialValue = 0)
     val thisWeekCount by statsRepository.thisWeekCount.collectAsStateWithLifecycle(initialValue = 0)
     val allTimeCount by statsRepository.allTimeCount.collectAsStateWithLifecycle(initialValue = 0)
@@ -473,6 +474,7 @@ fun HaramVeilMainShell(
                             thisWeekCount = thisWeekCount,
                             allTimeCount = allTimeCount,
                             mostBlockedApp = mostBlockedApp,
+                            isLoading = !statsLoaded,
                             onRequestClearHistory = {
                                 pendingSensitiveAction = SensitiveAction.CLEAR_HISTORY
                             },

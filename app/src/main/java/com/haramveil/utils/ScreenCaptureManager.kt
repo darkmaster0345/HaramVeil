@@ -32,6 +32,7 @@ import com.haramveil.data.models.ProtectionSettings
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 class ScreenCaptureManager(
@@ -52,6 +53,31 @@ class ScreenCaptureManager(
             topCapturePercent = settings.topCapturePercent,
             middleCapturePercent = settings.middleCapturePercent,
         )
+    }
+
+    fun prepareForVisualModel(
+        bitmap: Bitmap,
+        inputSize: Int,
+    ): Bitmap {
+        val maxLongEdge = max(inputSize, inputSize * 2)
+        val currentLongEdge = max(bitmap.width, bitmap.height)
+        if (currentLongEdge <= maxLongEdge) {
+            return bitmap
+        }
+
+        val scale = maxLongEdge.toFloat() / currentLongEdge.toFloat()
+        val targetWidth = (bitmap.width * scale).roundToInt().coerceAtLeast(1)
+        val targetHeight = (bitmap.height * scale).roundToInt().coerceAtLeast(1)
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+        if (scaledBitmap.config == Bitmap.Config.RGB_565) {
+            return scaledBitmap
+        }
+
+        return scaledBitmap.copy(Bitmap.Config.RGB_565, false).also { convertedBitmap ->
+            if (convertedBitmap !== scaledBitmap && !scaledBitmap.isRecycled) {
+                scaledBitmap.recycle()
+            }
+        }
     }
 
     @Suppress("DEPRECATION")

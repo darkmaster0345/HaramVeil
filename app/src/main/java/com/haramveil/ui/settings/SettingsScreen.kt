@@ -18,6 +18,8 @@
 
 package com.haramveil.ui.settings
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -96,7 +98,7 @@ fun SettingsScreen(
         runCatching {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             "${packageInfo.versionName} (${packageInfo.longVersionCode})"
-        }.getOrDefault("0.1.0")
+        }.getOrDefault("1.0.0")
     }
     var draftKeyword by rememberSaveable { mutableStateOf("") }
     var showEngineDialog by remember { mutableStateOf(false) }
@@ -270,9 +272,9 @@ fun SettingsScreen(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
                 SettingsActionRow(
                     title = "Change Security Questions",
-                    supporting = "Your recovery answers stay hashed only. Rotation will follow the same secure flow.",
+                    supporting = "Recovery answers stay hashed only. Rotation currently reuses the secure forgot-PIN path.",
                     onClick = {
-                        infoDialogMessage = "Recovery question rotation is not fully separate yet. Today, the forgot-PIN flow can still reset the PIN securely using the questions already saved on-device."
+                        infoDialogMessage = "Security-question rotation is not a separate screen yet. The existing forgot-PIN flow still uses the on-device hashed answers securely."
                     },
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
@@ -331,7 +333,11 @@ fun SettingsScreen(
                     title = "GitHub",
                     supporting = "github.com/darkmaster0345/HaramVeil",
                     onClick = {
-                        infoDialogMessage = "GitHub deep linking will be polished later. The repository URL is already reserved here in the UI."
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/darkmaster0345/HaramVeil")).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            },
+                        )
                     },
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
@@ -369,7 +375,7 @@ fun SettingsScreen(
     if (infoDialogMessage != null) {
         AlertDialog(
             onDismissRequest = { infoDialogMessage = null },
-            title = { Text("Coming in a later phase") },
+            title = { Text("Security note") },
             text = { Text(infoDialogMessage.orEmpty()) },
             confirmButton = {
                 TextButton(onClick = { infoDialogMessage = null }) {
@@ -533,7 +539,7 @@ private fun MonitoredAppsDialog(
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "This reuses the onboarding idea, but keeps the edit local to the Phase 3 UI for now.",
+                    text = "Selections made here stay on-device and update the monitored-app list used by protection.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

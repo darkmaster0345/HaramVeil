@@ -18,16 +18,28 @@
 
 package com.haramveil.ui.stats
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.QueryStats
@@ -43,6 +55,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,6 +82,7 @@ fun StatsScreen(
     thisWeekCount: Int,
     allTimeCount: Int,
     mostBlockedApp: MostBlockedAppUiModel?,
+    isLoading: Boolean,
     onRequestClearHistory: () -> Unit,
 ) {
     var selectedFilter by remember { mutableStateOf<BlockDetectionMode?>(null) }
@@ -91,31 +107,19 @@ fun StatsScreen(
             )
         }
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                StatsSummaryCard(
-                    modifier = Modifier.weight(1f),
-                    label = "Today",
-                    count = todayCount,
-                )
-                StatsSummaryCard(
-                    modifier = Modifier.weight(1f),
-                    label = "This Week",
-                    count = thisWeekCount,
-                )
-                StatsSummaryCard(
-                    modifier = Modifier.weight(1f),
-                    label = "All Time",
-                    count = allTimeCount,
-                )
-            }
+            StatsSummarySection(
+                todayCount = todayCount,
+                thisWeekCount = thisWeekCount,
+                allTimeCount = allTimeCount,
+                isLoading = isLoading,
+            )
         }
         item {
             HaramVeilSectionCard {
                 SectionLabel(text = "Most blocked app")
-                if (mostBlockedApp == null) {
+                if (isLoading) {
+                    StatsLoadingBlock(lines = 2)
+                } else if (mostBlockedApp == null) {
                     Text(
                         text = "No block history yet. Once HaramVeil steps in, the app most often interrupted will surface here.",
                         style = MaterialTheme.typography.bodyMedium,
@@ -156,27 +160,31 @@ fun StatsScreen(
         item {
             HaramVeilSectionCard {
                 SectionLabel(text = "Filter by detection mode")
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    FilterChip(
-                        selected = selectedFilter == null,
-                        onClick = { selectedFilter = null },
-                        label = { Text("All") },
-                    )
-                    listOf(
-                        BlockDetectionMode.MODE_1,
-                        BlockDetectionMode.MODE_2,
-                        BlockDetectionMode.MODE_3,
-                    ).forEach { mode ->
+                if (isLoading) {
+                    StatsLoadingBlock(lines = 1)
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
                         FilterChip(
-                            selected = selectedFilter == mode,
-                            onClick = { selectedFilter = mode },
-                            label = { Text(mode.label) },
+                            selected = selectedFilter == null,
+                            onClick = { selectedFilter = null },
+                            label = { Text("All") },
                         )
+                        listOf(
+                            BlockDetectionMode.MODE_1,
+                            BlockDetectionMode.MODE_2,
+                            BlockDetectionMode.MODE_3,
+                        ).forEach { mode ->
+                            FilterChip(
+                                selected = selectedFilter == mode,
+                                onClick = { selectedFilter = mode },
+                                label = { Text(mode.label) },
+                            )
+                        }
                     }
                 }
             }
@@ -184,10 +192,17 @@ fun StatsScreen(
         item {
             SectionLabel(text = "Block events")
         }
-        if (filteredEvents.isEmpty()) {
+        if (isLoading) {
+            items(
+                count = 3,
+                key = { index -> "stats_loading_$index" },
+            ) {
+                StatsEventLoadingRow()
+            }
+        } else if (filteredEvents.isEmpty()) {
             item {
                 HaramVeilSectionCard {
-                    androidx.compose.foundation.layout.Column(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -262,6 +277,74 @@ private fun StatsSummaryCard(
 }
 
 @Composable
+private fun StatsSummarySection(
+    todayCount: Int,
+    thisWeekCount: Int,
+    allTimeCount: Int,
+    isLoading: Boolean,
+) {
+    BoxWithConstraints {
+        val useCompactLayout = maxWidth < 440.dp
+        if (useCompactLayout) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (isLoading) {
+                    repeat(3) {
+                        StatsSummaryLoadingCard()
+                    }
+                } else {
+                    StatsSummaryCard(label = "Today", count = todayCount)
+                    StatsSummaryCard(label = "This Week", count = thisWeekCount)
+                    StatsSummaryCard(label = "All Time", count = allTimeCount)
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (isLoading) {
+                    repeat(3) {
+                        StatsSummaryLoadingCard(modifier = Modifier.weight(1f))
+                    }
+                } else {
+                    StatsSummaryCard(
+                        modifier = Modifier.weight(1f),
+                        label = "Today",
+                        count = todayCount,
+                    )
+                    StatsSummaryCard(
+                        modifier = Modifier.weight(1f),
+                        label = "This Week",
+                        count = thisWeekCount,
+                    )
+                    StatsSummaryCard(
+                        modifier = Modifier.weight(1f),
+                        label = "All Time",
+                        count = allTimeCount,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatsSummaryLoadingCard(
+    modifier: Modifier = Modifier,
+) {
+    HaramVeilSectionCard(
+        modifier = modifier,
+        contentPadding = PaddingValues(16.dp),
+    ) {
+        StatsShimmerLine(widthFraction = 0.52f, heightDp = 14)
+        StatsShimmerLine(widthFraction = 0.34f, heightDp = 32)
+    }
+}
+
+@Composable
 private fun StatsEventRow(
     event: BlockEventUiModel,
 ) {
@@ -315,6 +398,91 @@ private fun StatsEventRow(
             ModeBadge(mode = event.mode)
         }
     }
+}
+
+@Composable
+private fun StatsEventLoadingRow() {
+    HaramVeilSectionCard(
+        contentPadding = PaddingValues(16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            StatsShimmerBox(
+                modifier = Modifier
+                    .fillMaxWidth(0.16f)
+                    .height(46.dp)
+                    .clip(RoundedCornerShape(14.dp)),
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                StatsShimmerLine(widthFraction = 0.56f, heightDp = 18)
+                StatsShimmerLine(widthFraction = 0.38f, heightDp = 12)
+                StatsShimmerLine(widthFraction = 0.68f, heightDp = 12)
+            }
+            StatsShimmerLine(widthFraction = 0.20f, heightDp = 24)
+        }
+    }
+}
+
+@Composable
+private fun StatsLoadingBlock(
+    lines: Int,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        repeat(lines) { index ->
+            StatsShimmerLine(
+                widthFraction = if (index == 0) 0.78f else 0.46f,
+                heightDp = if (index == 0) 18 else 14,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatsShimmerLine(
+    widthFraction: Float,
+    heightDp: Int,
+) {
+    StatsShimmerBox(
+        modifier = Modifier
+            .fillMaxWidth(widthFraction)
+            .height(heightDp.dp)
+            .clip(RoundedCornerShape(12.dp)),
+    )
+}
+
+@Composable
+private fun StatsShimmerBox(
+    modifier: Modifier = Modifier,
+) {
+    val shimmerTransition = rememberInfiniteTransition(label = "statsShimmer")
+    val shimmerOffset by shimmerTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1_000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1_100, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "statsShimmerOffset",
+    )
+    val brush = Brush.linearGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
+            MaterialTheme.colorScheme.secondary.copy(alpha = 0.20f),
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
+        ),
+        start = Offset.Zero,
+        end = Offset(shimmerOffset, shimmerOffset / 3f),
+    )
+
+    Box(
+        modifier = modifier.background(brush = brush),
+    )
 }
 
 private fun formatDetectionDetail(

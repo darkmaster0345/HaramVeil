@@ -19,8 +19,10 @@
 package com.haramveil.accessibility
 
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import android.accessibilityservice.AccessibilityService
+import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityEvent
 import com.haramveil.data.local.ProtectionPreferencesRepository
@@ -58,6 +60,8 @@ class HaramVeilAccessibilityService : AccessibilityService() {
     private lateinit var throttleManager: ThrottleManager
     private lateinit var mode2Processor: Mode2Processor
     private lateinit var mode3Processor: Mode3Processor
+    private var processedMode1EventsInWindow = 0
+    private var processedMetricsWindowStartedAtMs = SystemClock.elapsedRealtime()
 
     override fun onCreate() {
         super.onCreate()
@@ -205,6 +209,7 @@ class HaramVeilAccessibilityService : AccessibilityService() {
         trigger: ThrottledScanTrigger,
     ) {
         try {
+            recordDebugProcessedEvent()
             val currentSettings = protectionSettingsState.value
             val scanResult = uiTreeScanner.scan(
                 rootNode = trigger.rootNode,
@@ -285,7 +290,25 @@ class HaramVeilAccessibilityService : AccessibilityService() {
         } ?: "Monitored package appears on the high-risk app list."
     }
 
+    private fun recordDebugProcessedEvent() {
+        val isDebuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        if (!isDebuggable) {
+            return
+        }
+
+        processedMode1EventsInWindow += 1
+        val elapsedMs = SystemClock.elapsedRealtime() - processedMetricsWindowStartedAtMs
+        if (elapsedMs < DebugMetricsWindowMs) {
+            return
+        }
+
+        Log.d(LogTag, "Mode 1 events processed per minute: $processedMode1EventsInWindow")
+        processedMode1EventsInWindow = 0
+        processedMetricsWindowStartedAtMs = SystemClock.elapsedRealtime()
+    }
+
     private companion object {
         const val LogTag = "HaramVeilMode1"
+        const val DebugMetricsWindowMs = 60_000L
     }
 }

@@ -103,7 +103,7 @@ fun AdvancedSettingsScreen(
         item {
             HaramVeilWordmarkHeader(
                 title = "Advanced Settings",
-                subtitle = "Independent mode switches, model controls, frame pacing, and per-app overrides stay local-only for now.",
+                subtitle = "Independent mode switches, model controls, frame pacing, and per-app overrides are applied locally on this device.",
                 action = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -129,14 +129,14 @@ fun AdvancedSettingsScreen(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
                 AdvancedToggleRow(
                     label = "Mode 2",
-                    description = "OCR can be toggled independently here even though the real cascade wiring arrives later.",
+                    description = "OCR can be toggled independently here while still respecting the cascade rules at runtime.",
                     checked = mode2Enabled,
                     onCheckedChange = onMode2Changed,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
                 AdvancedToggleRow(
                     label = "Mode 3",
-                    description = "Visual ONNX detection can be exposed independently for testing and per-device tuning.",
+                    description = "Visual ONNX detection can be tuned independently for device-specific pacing and thermal safety.",
                     checked = mode3Enabled,
                     onCheckedChange = onMode3Changed,
                 )

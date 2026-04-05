@@ -45,6 +45,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.haramveil.ui.HaramVeilSectionCard
@@ -171,7 +177,12 @@ private fun PinDotsRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics {
+                contentDescription = "PIN progress"
+                stateDescription = "$pinLength of $RequiredPinLength digits entered"
+            },
         horizontalArrangement = Arrangement.Center,
     ) {
         repeat(RequiredPinLength) { index ->
@@ -251,10 +262,23 @@ private fun NumpadButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    val accessibilityLabel = when {
+        label == "Back" -> "Delete last PIN digit"
+        label == "Clear" -> "Clear PIN entry"
+        label.all(Char::isDigit) -> "Secure PIN digit button"
+        else -> label
+    }
     Surface(
         modifier = modifier
             .height(62.dp)
             .clip(RoundedCornerShape(18.dp))
+            .clearAndSetSemantics {
+                role = Role.Button
+                contentDescription = accessibilityLabel
+                if (!enabled) {
+                    disabled()
+                }
+            }
             .clickable(enabled = enabled, onClick = onClick),
         tonalElevation = if (enabled) 6.dp else 0.dp,
         color = if (enabled) {

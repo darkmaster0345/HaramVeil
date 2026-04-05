@@ -412,7 +412,7 @@ fun PlaceholderPinDialog(
                     visualTransformation = PasswordVisualTransformation(),
                 )
                 Text(
-                    text = "Phase 8 will connect this dialog to the stored PIN check. For now, any 6 digits unlock the UI flow.",
+                    text = "Legacy preview dialog. Production flows now use the secure PIN gate composables backed by encrypted local storage.",
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodySmall,
                 )

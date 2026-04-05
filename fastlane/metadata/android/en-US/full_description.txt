@@ -1,0 +1,20 @@
+HaramVeil is an on-device Android content filter built for Muslims who want practical help lowering the gaze.
+
+It uses three local detection layers:
+
+- Mode 1 scans the visible app UI tree for risky text, IDs, and monitored packages.
+- Mode 2 captures limited HaramClip regions and runs OCR using either ML Kit or a FOSS ONNX OCR engine.
+- Mode 3 runs NudeNet ONNX inference on the same cropped regions for visual explicit-content detection.
+
+When HaramVeil blocks content, it shows a native veil overlay, sends the user to the launcher, and places the app into lockdown for the configured duration.
+
+Key points:
+
+- No cloud detection
+- No tracking
+- Local encrypted history
+- PIN-protected settings
+- Device Admin and reboot recovery
+- GPL-3.0 licensed
+
+The optional proprietary ML Kit path is still present for users who prefer it, but the app also includes a FOSS OCR route for privacy-focused and de-Googled devices.

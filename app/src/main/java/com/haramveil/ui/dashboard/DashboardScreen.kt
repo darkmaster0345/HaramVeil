@@ -20,6 +20,7 @@ package com.haramveil.ui.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.haramveil.ui.ActiveLockdownUiModel
 import com.haramveil.ui.BlockEventUiModel
+import com.haramveil.ui.HaramVeilEmptyIllustration
 import com.haramveil.ui.HaramVeilSectionCard
 import com.haramveil.ui.HaramVeilWordmarkHeader
 import com.haramveil.ui.InstalledAppIcon
@@ -204,28 +206,53 @@ fun DashboardScreen(
                 }
             }
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    DashboardMetricCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Active Mode",
-                        value = "$activeModeCount live",
-                        supporting = activeModeSummary,
-                    )
-                    DashboardMetricCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Apps Monitored",
-                        value = monitoredAppsCount.toString(),
-                        supporting = "Selected during setup",
-                    )
-                    DashboardMetricCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Blocks Today",
-                        value = blocksToday.toString(),
-                        supporting = "Recent interventions",
-                    )
+                BoxWithConstraints {
+                    if (maxWidth < 440.dp) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            DashboardMetricCard(
+                                title = "Active Mode",
+                                value = "$activeModeCount live",
+                                supporting = activeModeSummary,
+                            )
+                            DashboardMetricCard(
+                                title = "Apps Monitored",
+                                value = monitoredAppsCount.toString(),
+                                supporting = "Selected during setup",
+                            )
+                            DashboardMetricCard(
+                                title = "Blocks Today",
+                                value = blocksToday.toString(),
+                                supporting = "Recent interventions",
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            DashboardMetricCard(
+                                modifier = Modifier.weight(1f),
+                                title = "Active Mode",
+                                value = "$activeModeCount live",
+                                supporting = activeModeSummary,
+                            )
+                            DashboardMetricCard(
+                                modifier = Modifier.weight(1f),
+                                title = "Apps Monitored",
+                                value = monitoredAppsCount.toString(),
+                                supporting = "Selected during setup",
+                            )
+                            DashboardMetricCard(
+                                modifier = Modifier.weight(1f),
+                                title = "Blocks Today",
+                                value = blocksToday.toString(),
+                                supporting = "Recent interventions",
+                            )
+                        }
+                    }
                 }
             }
             if (!batteryOptimizationCompleted) {
@@ -284,11 +311,24 @@ fun DashboardScreen(
                         }
                     }
                     if (recentEvents.isEmpty()) {
-                        Text(
-                            text = "No recent blocks yet. Once protection starts intervening, the latest three events will appear here.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            HaramVeilEmptyIllustration()
+                            Text(
+                                text = "No recent blocks yet.",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = "Once protection starts intervening, the latest three events will appear here.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                     } else {
                         recentEvents.forEach { event ->
                             QuickEventRow(event = event)

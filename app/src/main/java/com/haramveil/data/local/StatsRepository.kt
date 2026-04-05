@@ -23,10 +23,14 @@ import android.content.pm.PackageManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.Duration
 
 class StatsRepository private constructor(
@@ -36,6 +40,7 @@ class StatsRepository private constructor(
     private val packageManager = applicationContext.packageManager
     private val dao = HaramVeilDatabase.getInstance(applicationContext).blockEventDao()
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val hasLoadedSnapshotMutable = MutableStateFlow(false)
 
     val allEvents: StateFlow<List<BlockEvent>> = dao.getAll()
         .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
@@ -63,6 +68,15 @@ class StatsRepository private constructor(
 
     val mostBlockedAppRecord: StateFlow<MostBlockedAppRecord?> = dao.getMostBlockedAppRecord()
         .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5_000L), null)
+
+    val hasLoadedSnapshot: StateFlow<Boolean> = hasLoadedSnapshotMutable.asStateFlow()
+
+    init {
+        repositoryScope.launch {
+            dao.getAll().first()
+            hasLoadedSnapshotMutable.value = true
+        }
+    }
 
     suspend fun logBlock(
         packageName: String,

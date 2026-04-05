@@ -139,15 +139,25 @@ class Mode3Processor(
             try {
                 val modelConfig = modelSelector.select()
                 inferenceEngine.warm(modelConfig)
-                val tensor = preprocessor.createTensor(
+                val preparedBitmap = screenCaptureManager.prepareForVisualModel(
                     bitmap = captureBitmap,
+                    inputSize = modelConfig.inputSize,
+                )
+                val tensor = preprocessor.createTensor(
+                    bitmap = preparedBitmap,
                     modelConfig = modelConfig,
                     environment = inferenceEngine.environment(),
                 )
-                val onnxOutput = inferenceEngine.run(
-                    tensor = tensor,
-                    modelConfig = modelConfig,
-                )
+                val onnxOutput = try {
+                    inferenceEngine.run(
+                        tensor = tensor,
+                        modelConfig = modelConfig,
+                    )
+                } finally {
+                    if (preparedBitmap !== captureBitmap) {
+                        recycleBitmap(preparedBitmap)
+                    }
+                }
                 val detectionResult = inferenceEngine.evaluate(onnxOutput)
                 updateThermalGuard(
                     packageName = trigger.scanResult.packageName,

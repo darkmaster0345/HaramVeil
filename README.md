@@ -1,185 +1,150 @@
 # HaramVeil
 
-HaramVeil is an Android app focused on on-device harmful-content shielding using:
-- Accessibility event monitoring
-- Text detection (keyword + OCR)
-- Image detection (ONNX Runtime)
-- Real-time overlay blocking
+HaramVeil is a privacy-first Android app for Muslims who want help guarding the eyes on-device. It watches only the apps you choose, runs detection locally, and responds by covering the screen, sending you home, and placing the offending app into a temporary lockdown.
 
-Everything runs locally on the device. No cloud inference is required for detection.
+This project is GPL-3.0 licensed, written in Kotlin, and designed around a zero-cloud default. Internet access is only used for the one-time optional FOSS OCR model download path. After that setup step, HaramVeil does not need network access for protection.
 
-## Current Build Status (verified on April 4, 2026)
+## What HaramVeil Does
 
-Verified with local Gradle checks:
-- `:app:assembleDebug` - PASS
-- `:app:assembleRelease` - PASS
-- `:app:testDebugUnitTest` - PASS (`NO-SOURCE`, no unit tests yet)
-- `:app:lintDebug` - PASS (`0 errors, 49 warnings`)
+HaramVeil combines three local detection layers:
 
-Generated APKs:
-- `app/build/outputs/apk/debug/app-debug.apk`
-- `app/build/outputs/apk/release/app-release-unsigned.apk`
+1. Mode 1 scans the Accessibility UI tree for risky packages, visible text, content descriptions, and blocked keywords.
+2. Mode 2 captures HaramClip screen regions and runs OCR using either Google ML Kit or a FOSS ONNX OCR model.
+3. Mode 3 captures the same HaramClip regions and runs NudeNet ONNX inference for explicit visual content.
 
-## Tech Stack
+When risky content is confirmed, HaramVeil shows the Veil overlay, sends the user to the launcher, and starts an app lockdown timer that survives reboot.
 
-- Language: Kotlin
-- UI: Jetpack Compose + Material3
-- Storage: Room + DataStore
-- Background work: WorkManager
-- Security: EncryptedSharedPreferences
-- OCR: Google ML Kit Text Recognition
-- Image model runtime: ONNX Runtime Android
-- Build: Gradle 8.9 wrapper, AGP 8.2.2, Kotlin 1.9.0
+## Features
 
-## Android Config
+- Three-mode on-device detection pipeline with cascading triggers
+- Native Veil overlay with bundled ayah and hadith reminders
+- Encrypted local PIN gate, recovery questions, and brute-force lockout
+- Encrypted local stats database tied to the user PIN
+- Device Admin, boot recovery, sticky foreground service, and self-healing checks
+- Optional root enhancements on rooted devices
+- Local-only app history, keyword blocklist, and lockdown state
+- FOSS-first architecture with an optional proprietary ML Kit path
 
-- Package: `com.haramveil.app`
-- Min SDK: 26
-- Target SDK: 34
-- Compile SDK: 34
-- App version: `1.0` (`versionCode 1`)
+## Screenshots
 
-## Repository Structure
+Screenshots will be added here for:
 
-Main module:
-- `app/`
+- Onboarding
+- Dashboard
+- Stats
+- Settings
+- Advanced Settings
+- Veil overlay
 
-Key folders:
-- `app/src/main/java/com/haramveil/app/`
-  - `service/` and `services/` - accessibility and foreground services
-  - `detector/`, `detection/`, `mlkit/` - ONNX, keyword, OCR detection logic
-  - `ui/` - Compose screens and theme
-  - `data/` - Room + DataStore
-  - `security/` - PIN and encrypted storage
-  - `utils/` - helper utilities
-- `app/src/main/res/` - Android resources
-- `app/src/main/assets/320n.onnx` - bundled base ONNX model
+## Installation
 
-## Detection Pipeline
+### APK
 
-1. Accessibility events are received by `HaramVeilAccessibilityService`.
-2. Screen text is extracted from the active node tree.
-3. Keyword detector evaluates extracted text.
-4. Screenshot capture is attempted (API 30+) for ONNX image analysis.
-5. If harmful content is detected, an overlay event is posted.
-6. `MainActivity` observes the event and opens `BlockOverlayScreen`.
+1. Build or download the unsigned release APK.
+2. Install on Android 10 or newer.
+3. Complete onboarding.
+4. Grant Accessibility, overlay, and Device Admin permissions.
 
-Settings consumed by the service:
-- Text detection enable/disable
-- Image detection enable/disable
-- Notifications enable/disable
-- Enhanced model toggle
+### F-Droid
 
-## Models
+F-Droid metadata is included in `fastlane/metadata/android/en-US/`.
 
-Base model:
-- File: `app/src/main/assets/320n.onnx`
-- Loaded by default
+Important note:
+The current codebase still contains the optional Google Play Services ML Kit dependency for the proprietary OCR path. A FOSS-only distribution flavor should be cut before a real F-Droid submission so the binary can remain fully free-software compliant.
 
-Enhanced model:
-- File path at runtime: `files/models/640m.onnx`
-- Downloaded in-app via `ModelDownloadManager`
-- Used automatically when toggle is enabled and file is available
-- Falls back to base model if enhanced file is missing or invalid
+## Permissions Explained
 
-## Permissions and Components
+- `SYSTEM_ALERT_WINDOW`
+  Needed to place the Veil on top of the offending app before the app is hidden.
+- `FOREGROUND_SERVICE`
+  Keeps protection alive while HaramVeil is monitoring selected apps.
+- `FOREGROUND_SERVICE_SPECIAL_USE`
+  Declares the long-running protection and veil runtime on newer Android versions.
+- `RECEIVE_BOOT_COMPLETED`
+  Restarts protection after reboot.
+- `POST_NOTIFICATIONS`
+  Shows service health, Device Admin, and setup reminders.
+- `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+  Helps the user exempt HaramVeil from aggressive OEM battery killing.
+- `REQUEST_INSTALL_PACKAGES`
+  Reserved from earlier setup work. Model download itself uses private app storage and should be revisited before public release.
+- `USE_BIOMETRIC`
+  Reserved for future security options.
+- `INTERNET` in debug/setup path only
+  Used only for one-time optional FOSS OCR model download flow.
 
-Important permissions declared in `app/src/main/AndroidManifest.xml`:
-- `android.permission.SYSTEM_ALERT_WINDOW`
-- `android.permission.RECEIVE_BOOT_COMPLETED`
-- `android.permission.POST_NOTIFICATIONS`
-- `android.permission.INTERNET`
-- `android.permission.ACCESS_NETWORK_STATE`
-- `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
-- Foreground service permissions
+## ONNX Model Sources
 
-Core Android components:
-- `MainActivity`
-- Accessibility service: `service.HaramVeilAccessibilityService`
-- Foreground services:
-  - `services.ProtectionForegroundService`
-  - `services.HaramVeilForegroundService`
-- Boot receiver: `receivers.BootCompletedReceiver`
-- Device admin receiver: `admin.HaramVeilAdminReceiver`
+- NudeNet v3.4 weights:
+  `https://github.com/notAI-tech/NudeNet/releases/tag/v3.4-weights`
+- Bundled assets currently used by the app:
+  `app/src/main/assets/320n.onnx`
+  `app/src/main/assets/640m.onnx`
+- FOSS OCR model source:
+  ModelScope RapidOCR `latin_PP-OCRv5_rec_mobile_infer.onnx`
 
-Backup and transfer rules are enabled in manifest:
-- `@xml/backup_rules`
-- `@xml/data_extraction_rules`
+## Privacy Policy
 
-## Prerequisites
+All detection, screenshots, OCR, ONNX inference, logs, PIN checks, and lockdown timers stay on the device. HaramVeil does not upload browsing data, screenshots, OCR text, or block history to any server. The only network use in the project is the one-time optional download of the FOSS OCR model during setup; after that, protection runs locally.
 
-- Android Studio (recent stable)
-- Android SDK installed locally
-- JDK 17+ (JDK 21 also works)
+## Battery Usage Guide
 
-If building from CLI, ensure SDK location is set in `local.properties`:
-- `sdk.dir=C\:\\Users\\<you>\\AppData\\Local\\Android\\Sdk`
+Expected battery impact on the Samsung Galaxy A13 / Exynos 850 target:
 
-## Build and Run
+- Mode 1 only:
+  designed to stay near idle cost with a 500 ms debounce and package filtering; expected to remain under roughly 2% battery per idle hour.
+- Mode 1 + Mode 2:
+  moderate impact because OCR only runs after a Mode 1 wake event and only on HaramClip regions.
+- Mode 1 + Mode 2 + Mode 3:
+  highest cost; use the 320 model for weaker devices and keep the inference interval at 1000-2000 ms.
 
-Windows (PowerShell):
+The app also includes a thermal guard for Mode 3. If three consecutive visual inferences exceed 1500 ms, HaramVeil automatically slows visual scans to 2000 ms.
+
+## Known Limitations
+
+- Android 10 is the minimum supported version.
+- Mode 2 screenshot capture requires Android 11 or newer because `takeScreenshot()` is an API 30+ accessibility capability.
+- The current repository includes an optional proprietary ML Kit dependency, so a separate FOSS-only flavor is still recommended before F-Droid submission.
+- The stats store is SQLCipher-backed rather than Room-backed in this branch due AGP 9 / Windows verifier issues encountered during implementation.
+- There is no iOS version.
+
+## Accessibility Notes
+
+- Icon-only controls now include content descriptions where appropriate.
+- The PIN pad intentionally avoids exposing spoken digit labels to accessibility services. The visual digits still render, but the semantic labels are generic so TalkBack does not read the entered numbers aloud. This is a deliberate privacy tradeoff for the security screen.
+
+## Build
+
+Windows:
 
 ```powershell
 .\gradlew.bat :app:assembleDebug
 .\gradlew.bat :app:assembleRelease
 ```
 
-macOS/Linux:
+Linux/macOS:
 
 ```bash
 ./gradlew :app:assembleDebug
 ./gradlew :app:assembleRelease
 ```
 
-Install debug build:
+## Reproducibility Notes
 
-```powershell
-.\gradlew.bat :app:installDebug
-```
+For F-Droid-style reproducible builds:
 
-## First Run Setup on Device
+- Build with the checked-in Gradle wrapper.
+- Use JDK 17.
+- Use Android SDK platform 36 and matching build-tools.
+- Keep the release build unsigned in CI.
+- Prefer a FOSS-only release flavor before submitting to F-Droid because the optional ML Kit dependency is proprietary.
 
-1. Install and open the app.
-2. Enable Accessibility service for HaramVeil.
-3. Grant overlay permission.
-4. Grant notification permission (Android 13+).
-5. Disable battery optimization for uninterrupted monitoring.
-6. Enable protection from onboarding/dashboard.
+GitHub Actions in `.github/workflows/build.yml` builds the unsigned release APK and runs unit tests on pushes to `main`.
 
-## Quality and Testing Notes
+## Contributing
 
-- Unit tests are not implemented yet (`testDebugUnitTest` is `NO-SOURCE`).
-- No connected instrumented verification is possible without a real device/emulator attached.
-- Lint currently reports warnings (dependency updates, icon polish, some obsolete API guards), but no blocking errors.
-
-## Known Limitations
-
-- Release build currently uses `minifyEnabled false`.
-- Dependency versions are functional but not the newest available.
-- Screenshot-based image analysis requires API 30+ for actual capture path.
-- For complete runtime validation, test on a real device with accessibility + overlay enabled.
-
-## Troubleshooting
-
-Build fails with "SDK location not found":
-- Ensure `local.properties` exists with valid `sdk.dir`.
-
-App installs but does not block:
-- Verify Accessibility service is enabled.
-- Verify overlay permission is granted.
-- Verify protection is turned on in app UI.
-
-Enhanced model not used:
-- Check download completed in Settings.
-- Ensure enhanced toggle is enabled.
-- If file is missing/corrupt, app falls back to base model.
-
-## Security and Privacy
-
-- Content analysis is performed on-device.
-- PIN data is stored in encrypted preferences.
-- No detection content is sent to remote servers by default.
+This started as a solo project, but pull requests are welcome. Please keep changes readable, self-documenting, and aligned with the privacy-first and Islamic-purpose goals of the app. If you introduce a non-FOSS dependency, call it out clearly and offer a FOSS alternative.
 
 ## License
 
-Project license information should be added in a dedicated `LICENSE` file if distribution is planned.
+HaramVeil is licensed under GPL-3.0-or-later. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

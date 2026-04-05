@@ -24,6 +24,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import com.haramveil.data.models.ProtectionSettings
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
+import com.haramveil.service.ProtectionBootstrapStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -43,6 +44,7 @@ class ProtectionPreferencesRepository(
         }
         .map { preferences ->
             ProtectionSettings(
+                protectionEnabled = preferences[HaramVeilPreferenceKeys.ProtectionEnabled] ?: true,
                 monitoredPackages = preferences[HaramVeilPreferenceKeys.SelectedPackages] ?: emptySet(),
                 keywordBlocklist = (preferences[HaramVeilPreferenceKeys.KeywordBlocklist]
                     ?: DefaultKeywordBlocklist.entries.toSet())
@@ -70,6 +72,10 @@ class ProtectionPreferencesRepository(
                     .toInt(),
                 accessibilitySettingsPromptShown = preferences[HaramVeilPreferenceKeys.AccessibilitySettingsPromptShown]
                     ?: false,
+                batteryOptimizationPromptShown = preferences[HaramVeilPreferenceKeys.BatteryOptimizationPromptShown]
+                    ?: false,
+                batteryOptimizationCompleted = preferences[HaramVeilPreferenceKeys.BatteryOptimizationCompleted]
+                    ?: false,
             )
         }
 
@@ -80,6 +86,13 @@ class ProtectionPreferencesRepository(
             preferences[HaramVeilPreferenceKeys.SelectedPackages] = packageNames
             preferences[HaramVeilPreferenceKeys.AppSelectionSaved] = true
         }
+    }
+
+    suspend fun saveProtectionEnabled(enabled: Boolean) {
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.ProtectionEnabled] = enabled
+        }
+        ProtectionBootstrapStore(context).setProtectionEnabled(enabled)
     }
 
     suspend fun saveKeywordBlocklist(entries: List<String>) {
@@ -154,6 +167,18 @@ class ProtectionPreferencesRepository(
     suspend fun markAccessibilitySettingsPromptShown() {
         context.haramVeilPreferencesDataStore.edit { preferences ->
             preferences[HaramVeilPreferenceKeys.AccessibilitySettingsPromptShown] = true
+        }
+    }
+
+    suspend fun markBatteryOptimizationPromptShown() {
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.BatteryOptimizationPromptShown] = true
+        }
+    }
+
+    suspend fun markBatteryOptimizationCompleted(completed: Boolean = true) {
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.BatteryOptimizationCompleted] = completed
         }
     }
 }

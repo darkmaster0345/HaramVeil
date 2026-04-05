@@ -33,6 +33,7 @@ internal object HaramVeilPreferenceKeys {
     const val DefaultMiddleCapturePercent = 40
 
     val OnboardingComplete = booleanPreferencesKey("onboarding_complete")
+    val ProtectionEnabled = booleanPreferencesKey("protection_enabled")
     val Benchmark320LatencyMs = longPreferencesKey("benchmark_320_latency_ms")
     val Benchmark640LatencyMs = longPreferencesKey("benchmark_640_latency_ms")
     val BenchmarkLatencyBudgetMs = longPreferencesKey("benchmark_latency_budget_ms")
@@ -54,6 +55,8 @@ internal object HaramVeilPreferenceKeys {
     val TopCapturePercent = longPreferencesKey("top_capture_percent")
     val MiddleCapturePercent = longPreferencesKey("middle_capture_percent")
     val AccessibilitySettingsPromptShown = booleanPreferencesKey("accessibility_prompt_shown")
+    val BatteryOptimizationPromptShown = booleanPreferencesKey("battery_optimization_prompt_shown")
+    val BatteryOptimizationCompleted = booleanPreferencesKey("battery_optimization_completed")
 
     fun securityQuestionKey(slot: Int): Preferences.Key<String> =
         stringPreferencesKey("security_question_${slot}_id")

@@ -27,6 +27,7 @@ import com.haramveil.data.models.StoredOnboardingSnapshot
 import com.haramveil.data.models.StoredSecurityQuestion
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
+import com.haramveil.service.ProtectionBootstrapStore
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import java.io.IOException
@@ -166,7 +167,10 @@ class OnboardingPreferencesRepository(
     suspend fun markOnboardingComplete() {
         context.haramVeilPreferencesDataStore.edit { preferences ->
             preferences[HaramVeilPreferenceKeys.OnboardingComplete] = true
+            preferences[HaramVeilPreferenceKeys.ProtectionEnabled] = true
         }
+        ProtectionBootstrapStore(context).markOnboardingComplete()
+        ProtectionBootstrapStore(context).setProtectionEnabled(true)
     }
 
     private fun questionKey(slot: Int): Preferences.Key<String> =

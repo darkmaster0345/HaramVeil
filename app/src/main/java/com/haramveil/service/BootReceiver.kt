@@ -21,8 +21,6 @@ package com.haramveil.service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.haramveil.data.local.OnboardingPreferencesRepository
-import com.haramveil.overlay.VeilOverlayController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,22 +31,33 @@ class BootReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED) {
+        if (intent.action !in SupportedActions) {
             return
         }
 
         val pendingResult = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
-                val onboardingComplete = OnboardingPreferencesRepository(context.applicationContext)
-                    .readSnapshot()
-                    .onboardingComplete
-                if (onboardingComplete) {
-                    VeilOverlayController.start(context.applicationContext)
+                val bootContext = if (intent.action == Intent.ACTION_LOCKED_BOOT_COMPLETED) {
+                    context.applicationContext.createDeviceProtectedStorageContext()
+                } else {
+                    context.applicationContext
+                }
+                val bootstrapStore = ProtectionBootstrapStore(bootContext)
+                if (bootstrapStore.isBootstrapReady() && bootstrapStore.isProtectionEnabled()) {
+                    HaramVeilProtectionController.start(bootContext)
                 }
             } finally {
                 pendingResult.finish()
             }
         }
+    }
+
+    private companion object {
+        val SupportedActions = setOf(
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_LOCKED_BOOT_COMPLETED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+        )
     }
 }

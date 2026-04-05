@@ -19,6 +19,7 @@
 package com.haramveil.data.models
 
 data class ProtectionSettings(
+    val protectionEnabled: Boolean = true,
     val monitoredPackages: Set<String> = emptySet(),
     val keywordBlocklist: List<String> = emptyList(),
     val mode1Enabled: Boolean = true,
@@ -32,4 +33,6 @@ data class ProtectionSettings(
     val topCapturePercent: Int = 30,
     val middleCapturePercent: Int = 40,
     val accessibilitySettingsPromptShown: Boolean = false,
+    val batteryOptimizationPromptShown: Boolean = false,
+    val batteryOptimizationCompleted: Boolean = false,
 )

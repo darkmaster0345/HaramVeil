@@ -325,6 +325,7 @@ fun ModeBadge(
         BlockDetectionMode.MODE_1 -> MaterialTheme.colorScheme.secondary
         BlockDetectionMode.MODE_2 -> Color(0xFF8BE1BA)
         BlockDetectionMode.MODE_3 -> MaterialTheme.colorScheme.tertiary
+        BlockDetectionMode.SYSTEM_ALERT -> Color(0xFFF6C065)
     }
     StatusPill(
         label = mode.label,

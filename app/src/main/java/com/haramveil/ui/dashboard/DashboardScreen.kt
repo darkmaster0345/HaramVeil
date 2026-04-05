@@ -24,15 +24,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,11 +68,18 @@ fun DashboardScreen(
     monitoredAppsCount: Int,
     blocksToday: Int,
     accessibilityServiceActive: Boolean,
+    deviceAdminEnabled: Boolean,
+    foregroundServiceActive: Boolean,
+    rootModeEnabled: Boolean,
     activeLockdowns: List<ActiveLockdownUiModel>,
+    batteryOptimizationCompleted: Boolean,
+    batteryOptimizationManufacturerLabel: String,
     recentEvents: List<BlockEventUiModel>,
     onProtectionEnabledChange: (Boolean) -> Unit,
     onRequestProtectionDisable: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
+    onOpenBatteryOptimizationGuide: () -> Unit,
+    onMarkBatteryOptimizationCompleted: () -> Unit,
     onViewFullStats: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -150,6 +161,46 @@ fun DashboardScreen(
                             }
                         }
                     }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        StatusPill(
+                            label = if (deviceAdminEnabled) "Device Admin enabled" else "Device Admin off",
+                            backgroundColor = if (deviceAdminEnabled) {
+                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f)
+                            } else {
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.14f)
+                            },
+                            contentColor = if (deviceAdminEnabled) {
+                                MaterialTheme.colorScheme.secondary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                        )
+                        StatusPill(
+                            label = if (foregroundServiceActive) "Foreground service active" else "Foreground service restarting",
+                            backgroundColor = if (foregroundServiceActive) {
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f)
+                            } else {
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.14f)
+                            },
+                            contentColor = if (foregroundServiceActive) {
+                                MaterialTheme.colorScheme.tertiary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                        )
+                        if (rootModeEnabled) {
+                            StatusPill(
+                                label = "Root mode: Enhanced Protection",
+                                backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                contentColor = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
                 }
             }
             item {
@@ -175,6 +226,35 @@ fun DashboardScreen(
                         value = blocksToday.toString(),
                         supporting = "Recent interventions",
                     )
+                }
+            }
+            if (!batteryOptimizationCompleted) {
+                item {
+                    HaramVeilSectionCard {
+                        SectionLabel(text = "Battery protection step")
+                        Text(
+                            text = "Finish the ${batteryOptimizationManufacturerLabel} battery setup so background protection is less likely to be killed.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = onOpenBatteryOptimizationGuide,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text("Open guide")
+                            }
+                            Button(
+                                onClick = onMarkBatteryOptimizationCompleted,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text("I've done this")
+                            }
+                        }
+                    }
                 }
             }
             if (activeLockdowns.isNotEmpty()) {

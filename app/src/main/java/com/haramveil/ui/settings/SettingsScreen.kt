@@ -259,7 +259,7 @@ fun SettingsScreen(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text = "This will matter later for uninstall resistance and service hardening.",
+                            text = "This now backs uninstall resistance and tamper alerts when someone tries to disable HaramVeil.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

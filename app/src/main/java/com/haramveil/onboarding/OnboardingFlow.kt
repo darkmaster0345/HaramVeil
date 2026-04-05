@@ -20,8 +20,6 @@
 
 package com.haramveil.onboarding
 
-import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
@@ -113,9 +111,9 @@ import com.haramveil.data.models.PermissionReviewState
 import com.haramveil.data.models.SecurityQuestion
 import com.haramveil.data.models.TextRecognitionEngine
 import com.haramveil.data.models.VisualModelOption
-import com.haramveil.overlay.VeilOverlayController
-import com.haramveil.security.HaramVeilDeviceAdminReceiver
+import com.haramveil.security.DeviceAdminController
 import com.haramveil.security.SecurityQuestionsManager
+import com.haramveil.service.HaramVeilProtectionController
 import com.haramveil.ui.HaramVeilMainShell
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -148,7 +146,7 @@ fun HaramVeilRoot(
 
     LaunchedEffect(uiState.onboardingComplete) {
         if (uiState.onboardingComplete) {
-            VeilOverlayController.start(context)
+            HaramVeilProtectionController.start(context)
         }
     }
 
@@ -1598,9 +1596,7 @@ private fun buildPermissionState(
 }
 
 private fun isDeviceAdminEnabled(context: Context): Boolean {
-    val devicePolicyManager = context.getSystemService(DevicePolicyManager::class.java)
-    val componentName = ComponentName(context, HaramVeilDeviceAdminReceiver::class.java)
-    return devicePolicyManager?.isAdminActive(componentName) == true
+    return DeviceAdminController.isEnabled(context)
 }
 
 private fun openOverlaySettings(context: Context) {
@@ -1615,16 +1611,9 @@ private fun openOverlaySettings(context: Context) {
 }
 
 private fun openDeviceAdminPrompt(context: Context) {
-    val componentName = ComponentName(context, HaramVeilDeviceAdminReceiver::class.java)
-    context.startActivity(
-        Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-            putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
-            putExtra(
-                DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                "HaramVeil uses device admin later for uninstall protection and harder lockdowns after a block.",
-            )
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        },
+    DeviceAdminController.openEnablePrompt(
+        context = context,
+        explanation = "HaramVeil uses Device Admin for uninstall resistance and stronger tamper protection after a block.",
     )
 }
 

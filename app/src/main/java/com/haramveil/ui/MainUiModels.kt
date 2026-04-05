@@ -37,6 +37,10 @@ enum class BlockDetectionMode(
         label = "Mode 3",
         shortLabel = "M3",
     ),
+    SYSTEM_ALERT(
+        label = "System Alert",
+        shortLabel = "SYS",
+    ),
 }
 
 enum class ModeOverrideOption(

@@ -110,6 +110,11 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             return
         }
 
+        val currentSettings = protectionSettingsState.value
+        if (!currentSettings.protectionEnabled) {
+            return
+        }
+
         val packageName = event.packageName
             ?.toString()
             ?.takeIf(String::isNotBlank)
@@ -122,7 +127,6 @@ class HaramVeilAccessibilityService : AccessibilityService() {
                 eventType = event.eventType,
             )
 
-            val currentSettings = protectionSettingsState.value
             if (appLockdownManager.isLocked(packageName)) {
                 appLockdownManager.lockApp(packageName, currentSettings.lockdownDurationMs)
                 DetectionBus.publishVeilRequested(
@@ -135,7 +139,6 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             }
         }
 
-        val currentSettings = protectionSettingsState.value
         if (!currentSettings.mode1Enabled) {
             return
         }
@@ -166,12 +169,12 @@ class HaramVeilAccessibilityService : AccessibilityService() {
             protectionPreferencesRepository.settingsFlow.collectLatest { settings ->
                 protectionSettingsState.value = settings
                 throttleManager.updateDebounceMs(settings.frameSkipIntervalMs)
-                if (settings.mode2Enabled) {
+                if (settings.protectionEnabled && settings.mode2Enabled) {
                     mode2Processor.start()
                 } else {
                     mode2Processor.stop()
                 }
-                if (settings.mode3Enabled) {
+                if (settings.protectionEnabled && settings.mode3Enabled) {
                     mode3Processor.start()
                 } else {
                     mode3Processor.stop()

@@ -38,6 +38,7 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -46,6 +47,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -82,8 +84,12 @@ import com.haramveil.data.models.VisualModelOption
 import com.haramveil.detection.mode3.ModelSelectionState
 import com.haramveil.detection.mode3.ModelSelector
 import com.haramveil.security.AppLockdownManager
+import com.haramveil.security.DeviceAdminController
 import com.haramveil.security.PinManager
 import com.haramveil.security.SecurityQuestionsManager
+import com.haramveil.service.HaramVeilProtectionController
+import com.haramveil.service.ProtectionBootstrapStore
+import com.haramveil.service.TamperEventSnapshot
 import com.haramveil.ui.dashboard.DashboardRoute
 import com.haramveil.ui.dashboard.DashboardScreen
 import com.haramveil.ui.settings.AdvancedSettingsScreen
@@ -94,10 +100,14 @@ import com.haramveil.ui.security.PinActionGateDialog
 import com.haramveil.ui.security.PinGateComposable
 import com.haramveil.ui.stats.StatsRoute
 import com.haramveil.ui.stats.StatsScreen
+import com.haramveil.utils.BatteryOptimizationHelper
+import com.haramveil.utils.RootAccessHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 private enum class MainDestination(
     val route: String,
@@ -146,6 +156,9 @@ fun HaramVeilMainShell(
     val appLockdownManager = remember(context) {
         AppLockdownManager(context.applicationContext)
     }
+    val bootstrapStore = remember(context) {
+        ProtectionBootstrapStore(context.applicationContext)
+    }
     val pinManager = remember(context) {
         PinManager(context.applicationContext)
     }
@@ -158,6 +171,12 @@ fun HaramVeilMainShell(
             protectionPreferencesRepository = protectionPreferencesRepository,
         )
     }
+    val batteryOptimizationGuide = remember(context) {
+        BatteryOptimizationHelper.resolveGuide(context.applicationContext)
+    }
+    val rootModeEnabled = remember(context) {
+        RootAccessHelper.isRootAvailable()
+    }
     val initialProtectionSettings = remember(
         selectedTextEngine,
         selectedVisualModel,
@@ -167,6 +186,7 @@ fun HaramVeilMainShell(
         selectedPackages,
     ) {
         ProtectionSettings(
+            protectionEnabled = true,
             monitoredPackages = selectedPackages,
             keywordBlocklist = DefaultKeywordBlocklist.entries,
             mode1Enabled = mode1Enabled,
@@ -195,9 +215,12 @@ fun HaramVeilMainShell(
         )
     }
     var appConfigs by remember(initialAppConfigs) { mutableStateOf(initialAppConfigs) }
-    var protectionEnabled by rememberSaveable { mutableStateOf(true) }
     var settingsUnlocked by rememberSaveable { mutableStateOf(false) }
     var pendingSensitiveAction by remember { mutableStateOf<SensitiveAction?>(null) }
+    var foregroundServiceActive by remember { mutableStateOf(bootstrapStore.isServiceAlive()) }
+    var deviceAdminEnabled by remember { mutableStateOf(DeviceAdminController.isEnabled(context.applicationContext)) }
+    var latestTamperEvent by remember { mutableStateOf(bootstrapStore.lastTamperEvent()) }
+    var showBatteryOptimizationDialog by rememberSaveable { mutableStateOf(false) }
     val activeTextEngine = protectionSettings.selectedTextEngine
     val activeVisualModel = resolvedModelSelectionState?.modelConfig?.visualModel ?: protectionSettings.selectedVisualModel ?: when {
         selectedVisualModel != null -> selectedVisualModel
@@ -216,11 +239,17 @@ fun HaramVeilMainShell(
     val mode3InferenceIntervalMs = protectionSettings.mode3InferenceIntervalMs.toFloat()
     val topCapturePercent = protectionSettings.topCapturePercent.toFloat()
     val middleCapturePercent = protectionSettings.middleCapturePercent.toFloat()
-    var blockEvents by remember(initialAppConfigs) {
+    var baseBlockEvents by remember(initialAppConfigs) {
         mutableStateOf(
             buildSampleBlockEvents(
                 monitoredApps = initialAppConfigs.filter { it.isMonitored }.map { it.app },
             ),
+        )
+    }
+    val blockEvents = remember(baseBlockEvents, latestTamperEvent) {
+        mergeBlockEvents(
+            contentEvents = baseBlockEvents,
+            tamperEvent = latestTamperEvent,
         )
     }
     var activeLockdowns by remember { mutableStateOf(emptyList<ActiveLockdownUiModel>()) }
@@ -260,6 +289,14 @@ fun HaramVeilMainShell(
         else -> currentRoute
     }
 
+    LaunchedEffect(protectionSettings.protectionEnabled) {
+        if (protectionSettings.protectionEnabled) {
+            HaramVeilProtectionController.start(context.applicationContext)
+        } else {
+            HaramVeilProtectionController.stop(context.applicationContext)
+        }
+    }
+
     LaunchedEffect(
         accessibilityServiceActive,
         protectionSettings.accessibilitySettingsPromptShown,
@@ -276,6 +313,18 @@ fun HaramVeilMainShell(
         resolvedModelSelectionState = modelSelector.readSelectionState()
     }
 
+    LaunchedEffect(
+        protectionSettings.batteryOptimizationCompleted,
+        protectionSettings.batteryOptimizationPromptShown,
+    ) {
+        if (!protectionSettings.batteryOptimizationCompleted &&
+            !protectionSettings.batteryOptimizationPromptShown
+        ) {
+            showBatteryOptimizationDialog = true
+            protectionPreferencesRepository.markBatteryOptimizationPromptShown()
+        }
+    }
+
     LaunchedEffect(knownAppsByPackage) {
         while (true) {
             activeLockdowns = appLockdownManager.activeLockdowns().map { lockdown ->
@@ -286,6 +335,9 @@ fun HaramVeilMainShell(
                     remainingLabel = formatRemainingDuration(lockdown.remainingDurationMs()),
                 )
             }
+            foregroundServiceActive = bootstrapStore.isServiceAlive()
+            deviceAdminEnabled = DeviceAdminController.isEnabled(context.applicationContext)
+            latestTamperEvent = bootstrapStore.lastTamperEvent()
             delay(1_000L)
         }
     }
@@ -368,22 +420,37 @@ fun HaramVeilMainShell(
                 ) {
                     composable(DashboardRoute.route) {
                         DashboardScreen(
-                            protectionEnabled = protectionEnabled,
+                            protectionEnabled = protectionSettings.protectionEnabled,
                             activeModeSummary = activeModeSummary,
                             activeModeCount = activeModeCount,
                             monitoredAppsCount = monitoredApps.size,
                             blocksToday = blockCounts.today,
                             accessibilityServiceActive = accessibilityServiceActive,
+                            deviceAdminEnabled = deviceAdminEnabled,
+                            foregroundServiceActive = foregroundServiceActive,
+                            rootModeEnabled = rootModeEnabled,
                             activeLockdowns = activeLockdowns,
+                            batteryOptimizationCompleted = protectionSettings.batteryOptimizationCompleted,
+                            batteryOptimizationManufacturerLabel = batteryOptimizationGuide.manufacturerLabel,
                             recentEvents = blockEvents.take(3),
                             onProtectionEnabledChange = { shouldEnable ->
-                                protectionEnabled = shouldEnable
+                                scope.launch {
+                                    protectionPreferencesRepository.saveProtectionEnabled(shouldEnable)
+                                }
                             },
                             onRequestProtectionDisable = {
                                 pendingSensitiveAction = SensitiveAction.DISABLE_PROTECTION
                             },
                             onOpenAccessibilitySettings = {
                                 openHaramVeilAccessibilitySettings(context)
+                            },
+                            onOpenBatteryOptimizationGuide = {
+                                showBatteryOptimizationDialog = true
+                            },
+                            onMarkBatteryOptimizationCompleted = {
+                                scope.launch {
+                                    protectionPreferencesRepository.markBatteryOptimizationCompleted()
+                                }
                             },
                             onViewFullStats = {
                                 navController.navigate(StatsRoute.route) {
@@ -420,7 +487,7 @@ fun HaramVeilMainShell(
                                 selectedEngine = activeTextEngine,
                                 globalLockdownDuration = globalLockdownDuration,
                                 keywordBlocklist = keywordBlocklist,
-                                deviceAdminEnabled = true,
+                                deviceAdminEnabled = deviceAdminEnabled,
                                 onOpenAdvancedSettings = {
                                     navController.navigate(SettingsRoute.advancedRoute)
                                 },
@@ -671,13 +738,69 @@ fun HaramVeilMainShell(
                     },
                     onAuthenticated = {
                         when (pendingSensitiveAction) {
-                            SensitiveAction.DISABLE_PROTECTION -> protectionEnabled = false
-                            SensitiveAction.CLEAR_HISTORY -> blockEvents = emptyList()
+                            SensitiveAction.DISABLE_PROTECTION -> {
+                                scope.launch {
+                                    protectionPreferencesRepository.saveProtectionEnabled(false)
+                                }
+                            }
+                            SensitiveAction.CLEAR_HISTORY -> {
+                                baseBlockEvents = emptyList()
+                                bootstrapStore.clearTamperEvent()
+                                latestTamperEvent = null
+                            }
                             null -> Unit
                         }
                         pendingSensitiveAction = null
                     },
                 )
+
+                if (showBatteryOptimizationDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showBatteryOptimizationDialog = false },
+                        title = { Text(batteryOptimizationGuide.title) },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text(
+                                    text = batteryOptimizationGuide.summary,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                batteryOptimizationGuide.steps.forEachIndexed { index, step ->
+                                    Text(
+                                        text = "${index + 1}. $step",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showBatteryOptimizationDialog = false
+                                    BatteryOptimizationHelper.openGuide(
+                                        context = context.applicationContext,
+                                        guide = batteryOptimizationGuide,
+                                    )
+                                },
+                            ) {
+                                Text(batteryOptimizationGuide.buttonLabel)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    showBatteryOptimizationDialog = false
+                                    scope.launch {
+                                        protectionPreferencesRepository.markBatteryOptimizationCompleted()
+                                    }
+                                },
+                            ) {
+                                Text("I've done this")
+                            }
+                        },
+                    )
+                }
             }
         }
     }
@@ -845,12 +968,13 @@ private fun buildActiveModeSummary(
 private fun deriveBlockCounts(
     events: List<BlockEventUiModel>,
 ): BlockCountSummary {
+    val contentEvents = events.filter { event -> event.mode != BlockDetectionMode.SYSTEM_ALERT }
     val today = LocalDate.now()
     val weekStart = today.minusDays(6)
     return BlockCountSummary(
-        today = events.count { it.timestamp.toLocalDate() == today },
-        thisWeek = events.count { !it.timestamp.toLocalDate().isBefore(weekStart) },
-        allTime = events.size,
+        today = contentEvents.count { it.timestamp.toLocalDate() == today },
+        thisWeek = contentEvents.count { !it.timestamp.toLocalDate().isBefore(weekStart) },
+        allTime = contentEvents.size,
     )
 }
 
@@ -858,6 +982,7 @@ private fun deriveMostBlockedApp(
     events: List<BlockEventUiModel>,
 ): MostBlockedAppUiModel? {
     return events
+        .filter { event -> event.mode != BlockDetectionMode.SYSTEM_ALERT }
         .groupingBy { it.app.packageName }
         .eachCount()
         .maxByOrNull { it.value }
@@ -884,6 +1009,31 @@ private fun fallbackInstalledApp(
         label = fallbackLabel,
         isHighRisk = false,
     )
+}
+
+private fun mergeBlockEvents(
+    contentEvents: List<BlockEventUiModel>,
+    tamperEvent: TamperEventSnapshot?,
+): List<BlockEventUiModel> {
+    val tamperEventModel = tamperEvent?.let { snapshot ->
+        BlockEventUiModel(
+            id = "tamper_${snapshot.eventType}_${snapshot.timestampMs}",
+            app = InstalledAppInfo(
+                packageName = "com.haramveil.system",
+                label = "Tamper Protection",
+                isHighRisk = false,
+            ),
+            mode = BlockDetectionMode.SYSTEM_ALERT,
+            timestamp = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(snapshot.timestampMs),
+                ZoneId.systemDefault(),
+            ),
+        )
+    }
+    return buildList {
+        tamperEventModel?.let(::add)
+        addAll(contentEvents)
+    }.sortedByDescending { event -> event.timestamp }
 }
 
 private fun formatRemainingDuration(

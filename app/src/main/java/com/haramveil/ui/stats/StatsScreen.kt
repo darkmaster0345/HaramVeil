@@ -165,7 +165,11 @@ fun StatsScreen(
                         onClick = { selectedFilter = null },
                         label = { Text("All") },
                     )
-                    BlockDetectionMode.entries.forEach { mode ->
+                    listOf(
+                        BlockDetectionMode.MODE_1,
+                        BlockDetectionMode.MODE_2,
+                        BlockDetectionMode.MODE_3,
+                    ).forEach { mode ->
                         FilterChip(
                             selected = selectedFilter == mode,
                             onClick = { selectedFilter = mode },

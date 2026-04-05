@@ -27,5 +27,7 @@ data class ProtectionSettings(
     val selectedTextEngine: TextRecognitionEngine = TextRecognitionEngine.ML_KIT,
     val selectedVisualModel: VisualModelOption? = null,
     val frameSkipIntervalMs: Long = 500L,
+    val topCapturePercent: Int = 30,
+    val middleCapturePercent: Int = 40,
     val accessibilitySettingsPromptShown: Boolean = false,
 )

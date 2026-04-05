@@ -50,6 +50,11 @@ sealed interface DetectionEvent {
         val matchDetails: String,
     ) : DetectionEvent
 
+    data class Mode2Clear(
+        val packageName: String,
+        val details: String,
+    ) : DetectionEvent
+
     data class Mode3Triggered(
         val packageName: String,
         val matchDetails: String,
@@ -86,6 +91,18 @@ object DetectionBus {
             DetectionEvent.Mode2Triggered(
                 packageName = packageName,
                 matchDetails = matchDetails,
+            ),
+        )
+    }
+
+    fun publishMode2Clear(
+        packageName: String,
+        details: String,
+    ) {
+        _events.tryEmit(
+            DetectionEvent.Mode2Clear(
+                packageName = packageName,
+                details = details,
             ),
         )
     }

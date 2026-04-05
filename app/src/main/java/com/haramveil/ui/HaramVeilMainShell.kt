@@ -181,8 +181,8 @@ fun HaramVeilMainShell(
     val mode2OverrideEnabled = protectionSettings.mode2Enabled
     val mode3OverrideEnabled = protectionSettings.mode3Enabled
     val frameSkipIntervalMs = protectionSettings.frameSkipIntervalMs.toFloat()
-    var topCapturePercent by remember { mutableFloatStateOf(30f) }
-    var middleCapturePercent by remember { mutableFloatStateOf(40f) }
+    val topCapturePercent = protectionSettings.topCapturePercent.toFloat()
+    val middleCapturePercent = protectionSettings.middleCapturePercent.toFloat()
     var blockEvents by remember(initialAppConfigs) {
         mutableStateOf(
             buildSampleBlockEvents(
@@ -448,8 +448,22 @@ fun HaramVeilMainShell(
                                     protectionPreferencesRepository.saveFrameSkipIntervalMs(intervalMs.toLong())
                                 }
                             },
-                            onTopCapturePercentChanged = { topCapturePercent = it.toFloat() },
-                            onMiddleCapturePercentChanged = { middleCapturePercent = it.toFloat() },
+                            onTopCapturePercentChanged = { percent ->
+                                scope.launch {
+                                    protectionPreferencesRepository.saveHaramClipConfiguration(
+                                        topCapturePercent = percent,
+                                        middleCapturePercent = protectionSettings.middleCapturePercent,
+                                    )
+                                }
+                            },
+                            onMiddleCapturePercentChanged = { percent ->
+                                scope.launch {
+                                    protectionPreferencesRepository.saveHaramClipConfiguration(
+                                        topCapturePercent = protectionSettings.topCapturePercent,
+                                        middleCapturePercent = percent,
+                                    )
+                                }
+                            },
                             onModeOverrideChanged = { packageName, option ->
                                 appConfigs = appConfigs.map { config ->
                                     if (config.app.packageName == packageName) {

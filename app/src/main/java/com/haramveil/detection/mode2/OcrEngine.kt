@@ -18,4 +18,16 @@
 
 package com.haramveil.detection.mode2
 
-object Mode2TextIntelligence
+import android.graphics.Bitmap
+
+interface OcrEngine {
+    suspend fun extractText(bitmap: Bitmap): OcrResult
+
+    fun isAvailable(): Boolean
+}
+
+data class OcrResult(
+    val text: String,
+    val confidence: Float,
+    val processingTimeMs: Long,
+)

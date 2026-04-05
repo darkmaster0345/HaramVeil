@@ -27,6 +27,8 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 internal object HaramVeilPreferenceKeys {
     const val DefaultLatencyBudgetMs = 1_500L
     const val DefaultFrameSkipIntervalMs = 500L
+    const val DefaultTopCapturePercent = 30
+    const val DefaultMiddleCapturePercent = 40
 
     val OnboardingComplete = booleanPreferencesKey("onboarding_complete")
     val Benchmark320LatencyMs = longPreferencesKey("benchmark_320_latency_ms")
@@ -45,6 +47,8 @@ internal object HaramVeilPreferenceKeys {
     val SecuritySetupSaved = booleanPreferencesKey("security_setup_saved")
     val KeywordBlocklist = stringSetPreferencesKey("keyword_blocklist")
     val FrameSkipIntervalMs = longPreferencesKey("frame_skip_interval_ms")
+    val TopCapturePercent = longPreferencesKey("top_capture_percent")
+    val MiddleCapturePercent = longPreferencesKey("middle_capture_percent")
     val AccessibilitySettingsPromptShown = booleanPreferencesKey("accessibility_prompt_shown")
 
     fun securityQuestionKey(slot: Int): Preferences.Key<String> =

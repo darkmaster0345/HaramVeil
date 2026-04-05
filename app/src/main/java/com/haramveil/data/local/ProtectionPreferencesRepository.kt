@@ -58,6 +58,12 @@ class ProtectionPreferencesRepository(
                 ),
                 frameSkipIntervalMs = preferences[HaramVeilPreferenceKeys.FrameSkipIntervalMs]
                     ?: HaramVeilPreferenceKeys.DefaultFrameSkipIntervalMs,
+                topCapturePercent = (preferences[HaramVeilPreferenceKeys.TopCapturePercent]
+                    ?: HaramVeilPreferenceKeys.DefaultTopCapturePercent.toLong())
+                    .toInt(),
+                middleCapturePercent = (preferences[HaramVeilPreferenceKeys.MiddleCapturePercent]
+                    ?: HaramVeilPreferenceKeys.DefaultMiddleCapturePercent.toLong())
+                    .toInt(),
                 accessibilitySettingsPromptShown = preferences[HaramVeilPreferenceKeys.AccessibilitySettingsPromptShown]
                     ?: false,
             )
@@ -112,6 +118,18 @@ class ProtectionPreferencesRepository(
         context.haramVeilPreferencesDataStore.edit { preferences ->
             preferences[HaramVeilPreferenceKeys.FrameSkipIntervalMs] =
                 intervalMs.coerceIn(minimumValue = 250L, maximumValue = 2_000L)
+        }
+    }
+
+    suspend fun saveHaramClipConfiguration(
+        topCapturePercent: Int,
+        middleCapturePercent: Int,
+    ) {
+        context.haramVeilPreferencesDataStore.edit { preferences ->
+            preferences[HaramVeilPreferenceKeys.TopCapturePercent] =
+                topCapturePercent.coerceIn(minimumValue = 10, maximumValue = 45).toLong()
+            preferences[HaramVeilPreferenceKeys.MiddleCapturePercent] =
+                middleCapturePercent.coerceIn(minimumValue = 20, maximumValue = 50).toLong()
         }
     }
 

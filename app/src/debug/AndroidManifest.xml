@@ -17,7 +17,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- TODO: Remove INTERNET once the one-time, user-approved model download flow is implemented and validated. -->
+    <!-- TODO: Remove INTERNET once the one-time, user-approved model download flow is implemented and validated.
+         Runtime is now gated so the app stops calling the network after the verified FOSS OCR model is stored locally. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
 </manifest>

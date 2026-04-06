@@ -215,7 +215,15 @@ class OnboardingViewModel(
     }
 
     suspend fun markOnboardingComplete() {
-        repository.markOnboardingComplete()
+        val state = _uiState.value
+        repository.markOnboardingComplete(
+            mode1Enabled = state.mode1Enabled,
+            mode2Enabled = state.mode2Enabled,
+            mode3Enabled = state.mode3Enabled,
+            textEngine = state.selectedTextEngine,
+            visualModel = state.selectedVisualModel,
+            monitoredPackages = state.selectedPackages,
+        )
         _uiState.update { current ->
             current.copy(onboardingComplete = true)
         }

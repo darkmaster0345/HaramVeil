@@ -25,6 +25,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.os.UserManager
 import androidx.work.WorkManager
 import com.haramveil.accessibility.isHaramVeilAccessibilityServiceEnabled
@@ -39,6 +40,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class HaramVeilForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -47,12 +49,14 @@ class HaramVeilForegroundService : Service() {
     private var unlockedRuntimeStarted = false
     private var userUnlockedReceiver: BroadcastReceiver? = null
     private var intentionalStopRequested = false
+    private var samsungWakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
         super.onCreate()
         bootstrapStore = ProtectionBootstrapStore(applicationContext)
         ProtectionNotificationHelper.ensureChannels(applicationContext)
         registerUserUnlockedReceiver()
+        acquireSamsungWakeLockIfNeeded()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -91,6 +95,7 @@ class HaramVeilForegroundService : Service() {
 
     override fun onDestroy() {
         unregisterUserUnlockedReceiver()
+        releaseSamsungWakeLock()
         stopRuntime(cancelRecovery = intentionalStopRequested)
         serviceScope.cancel()
         super.onDestroy()
@@ -195,5 +200,26 @@ class HaramVeilForegroundService : Service() {
         const val ActionStart = "com.haramveil.service.action.START"
         const val ActionStop = "com.haramveil.service.action.STOP"
         const val HeartbeatIntervalMs = 30_000L
+        private const val SamsungWakeLockTag = "HaramVeil::SamsungServiceKeepAlive"
+        private const val SamsungWakeLockTimeoutMs = 10 * 60 * 1_000L
+    }
+
+    private fun acquireSamsungWakeLockIfNeeded() {
+        val isSamsung = Build.MANUFACTURER.lowercase(Locale.US).contains("samsung")
+        if (!isSamsung) return
+        val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return
+        val wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, SamsungWakeLockTag)
+        if (!wakeLock.isHeld) {
+            wakeLock.acquire(SamsungWakeLockTimeoutMs)
+        }
+        samsungWakeLock = wakeLock
+    }
+
+    private fun releaseSamsungWakeLock() {
+        val wakeLock = samsungWakeLock ?: return
+        if (wakeLock.isHeld) {
+            wakeLock.release()
+        }
+        samsungWakeLock = null
     }
 }

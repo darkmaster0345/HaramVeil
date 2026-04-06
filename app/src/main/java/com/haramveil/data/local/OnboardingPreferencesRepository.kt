@@ -164,10 +164,31 @@ class OnboardingPreferencesRepository(
         }
     }
 
-    suspend fun markOnboardingComplete() {
+    suspend fun markOnboardingComplete(
+        mode1Enabled: Boolean,
+        mode2Enabled: Boolean,
+        mode3Enabled: Boolean,
+        textEngine: TextRecognitionEngine,
+        visualModel: VisualModelOption?,
+        monitoredPackages: Set<String>,
+    ) {
         context.haramVeilPreferencesDataStore.edit { preferences ->
             preferences[HaramVeilPreferenceKeys.OnboardingComplete] = true
             preferences[HaramVeilPreferenceKeys.ProtectionEnabled] = true
+            // Re-save mode configuration atomically with the completion flag
+            // so Samsung's aggressive process management cannot lose the earlier write.
+            preferences[HaramVeilPreferenceKeys.Mode1Enabled] = mode1Enabled
+            preferences[HaramVeilPreferenceKeys.Mode2Enabled] = mode2Enabled
+            preferences[HaramVeilPreferenceKeys.Mode3Enabled] = mode3Enabled
+            preferences[HaramVeilPreferenceKeys.SelectedTextEngine] = textEngine.storageValue
+            preferences[HaramVeilPreferenceKeys.ModeConfigurationSaved] = true
+            if (visualModel != null) {
+                preferences[HaramVeilPreferenceKeys.SelectedVisualModel] = visualModel.storageValue
+            }
+            if (monitoredPackages.isNotEmpty()) {
+                preferences[HaramVeilPreferenceKeys.SelectedPackages] = monitoredPackages
+                preferences[HaramVeilPreferenceKeys.AppSelectionSaved] = true
+            }
         }
         ProtectionBootstrapStore(context).markOnboardingComplete()
         ProtectionBootstrapStore(context).setProtectionEnabled(true)

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * HaramVeil
  * Copyright (C) 2026 HaramVeil Contributors
  *
@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -932,6 +933,13 @@ private fun PermissionsScreen(
                 buttonLabel = "Open Device Admin",
                 onGrant = { openDeviceAdminPrompt(context) },
             )
+            PermissionCard(
+                title = "Battery Optimization Exemption",
+                description = "Needed so the system does not pause HaramVeil's background monitoring, especially on Samsung and Xiaomi devices.",
+                isGranted = isBatteryOptimizationExempt(context),
+                buttonLabel = "Request Exemption",
+                onGrant = { requestBatteryOptimizationExemption(context) },
+            )
             if (selectedTextEngine == TextRecognitionEngine.FOSS_ONNX) {
                 PermissionCard(
                     title = "Private model storage",
@@ -1634,6 +1642,33 @@ private fun launchPersistAndNavigate(
 ) {
     scope.launch {
         action()
+    }
+}
+
+private fun isBatteryOptimizationExempt(context: Context): Boolean {
+    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        ?: return false
+    return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+}
+
+private fun requestBatteryOptimizationExemption(context: Context) {
+    if (isBatteryOptimizationExempt(context)) return
+    try {
+        context.startActivity(
+            Intent(
+                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                Uri.parse("package:${context.packageName}"),
+            ).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+    } catch (_: Exception) {
+        // Fallback: open the general battery optimization list.
+        context.startActivity(
+            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
     }
 }
 

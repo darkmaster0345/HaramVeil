@@ -23,7 +23,9 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.SystemClock
+import java.util.Locale
 
 class ServiceHealthAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(
@@ -45,17 +47,24 @@ class ServiceHealthAlarmReceiver : BroadcastReceiver() {
 
     companion object {
         const val ActionServiceHealthCheck = "com.haramveil.service.ACTION_SERVICE_HEALTH_CHECK"
-        const val HealthCheckIntervalMs = 15 * 60 * 1_000L
+        private const val DefaultHealthCheckIntervalMs = 15 * 60 * 1_000L
+        private const val SamsungHealthCheckIntervalMs = 5 * 60 * 1_000L
         private const val RequestCode = 4109
+
+        private fun healthCheckIntervalMs(): Long {
+            val isSamsung = Build.MANUFACTURER.lowercase(Locale.US).contains("samsung")
+            return if (isSamsung) SamsungHealthCheckIntervalMs else DefaultHealthCheckIntervalMs
+        }
 
         fun schedule(
             context: Context,
         ) {
             val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
+            val intervalMs = healthCheckIntervalMs()
             alarmManager.setInexactRepeating(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime() + HealthCheckIntervalMs,
-                HealthCheckIntervalMs,
+                SystemClock.elapsedRealtime() + intervalMs,
+                intervalMs,
                 pendingIntent(context),
             )
         }

@@ -22,6 +22,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 
 object DeviceAdminController {
     private const val DefaultExplanation =
@@ -52,6 +53,26 @@ object DeviceAdminController {
         context: Context,
         explanation: String = DefaultExplanation,
     ) {
-        context.startActivity(buildEnableIntent(context, explanation))
+        val standardIntent = buildEnableIntent(context, explanation)
+        try {
+            context.startActivity(standardIntent)
+        } catch (_: Exception) {
+            // Samsung One UI may reject the standard Device Admin intent.
+            // Fall back to the general Security Settings screen.
+            try {
+                context.startActivity(
+                    Intent(Settings.ACTION_SECURITY_SETTINGS).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                )
+            } catch (_: Exception) {
+                // Last resort: open the device's general settings page.
+                context.startActivity(
+                    Intent(Settings.ACTION_SETTINGS).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    },
+                )
+            }
+        }
     }
 }

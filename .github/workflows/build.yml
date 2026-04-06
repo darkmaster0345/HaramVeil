@@ -48,6 +48,6 @@ jobs:
         with:
           name: haramveil-release-unsigned
           path: |
-            app/build/outputs/apk/fossRelease/app-foss-release-unsigned.apk
-            app/build/outputs/apk/fullRelease/app-full-release-unsigned.apk
+            app/build/outputs/apk/foss/release/app-foss-release-unsigned.apk
+            app/build/outputs/apk/full/release/app-full-release-unsigned.apk
           if-no-files-found: error

@@ -30,15 +30,24 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
+      - name: Build debug APKs
+        run: |
+          ./gradlew --no-daemon :app:assembleFossDebug
+          ./gradlew --no-daemon :app:assembleFullDebug
+
       - name: Run unit tests
-        run: ./gradlew --no-daemon :app:testDebugUnitTest
+        run: ./gradlew --no-daemon :app:testFossDebugUnitTest
 
-      - name: Build unsigned release APK
-        run: ./gradlew --no-daemon :app:assembleRelease
+      - name: Build unsigned release APKs
+        run: |
+          ./gradlew --no-daemon :app:assembleFossRelease
+          ./gradlew --no-daemon :app:assembleFullRelease
 
-      - name: Upload unsigned release APK
+      - name: Upload unsigned release APKs
         uses: actions/upload-artifact@v4
         with:
           name: haramveil-release-unsigned
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          path: |
+            app/build/outputs/apk/fossRelease/app-foss-release-unsigned.apk
+            app/build/outputs/apk/fullRelease/app-full-release-unsigned.apk
           if-no-files-found: error
